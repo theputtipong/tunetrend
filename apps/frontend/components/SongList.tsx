@@ -9,9 +9,10 @@ import { StateMessage } from "./StateMessage";
 export async function SongList({
   country,
   tab,
+  category,
   lang,
-}: Readonly<{ country: CountryCode; tab: TabKey; lang: Lang }>) {
-  const songs = await fetchSongs(country, tab);
+}: Readonly<{ country: CountryCode; tab: TabKey; category?: string; lang: Lang }>) {
+  const songs = await fetchSongs(country, tab, category);
   const t = dictionaries[lang];
   const countryName = countryLabel(country, lang);
 

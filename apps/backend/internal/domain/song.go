@@ -31,7 +31,7 @@ type YouTubeRepository interface {
 
 type SongUsecase interface {
 	SyncTrendingMusic(countryCode string) error
-	GetTrends(countryCode string) ([]Song, error)
-	GetNewReleases(countryCode string) ([]Song, error)
+	GetTrends(countryCode, categoryID string) ([]Song, error)
+	GetNewReleases(countryCode, categoryID string) ([]Song, error)
 	GetMVs(countryCode string) ([]Song, error)
 }

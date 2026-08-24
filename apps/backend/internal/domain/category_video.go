@@ -1,6 +1,11 @@
 package domain
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var ErrUnknownCategory = errors.New("unknown category")
 
 type CategoryVideo struct {
 	ID           string    `gorm:"primaryKey;type:varchar(50)" json:"id"`
@@ -14,6 +19,8 @@ type CategoryVideo struct {
 
 type CategoryVideoRepository interface {
 	UpsertVideos(videos []CategoryVideo) error
+	GetVideos(countryCode string) ([]CategoryVideo, error)
+	GetNewVideos(countryCode string) ([]CategoryVideo, error)
 }
 
 type CategoryVideoUsecase interface {

@@ -9,8 +9,10 @@ type VideoCategory struct {
 
 type VideoCategoryRepository interface {
 	UpsertCategories(categories []VideoCategory) error
+	GetAssignableCategories(countryCode string) ([]VideoCategory, error)
 }
 
 type VideoCategoryUsecase interface {
 	SyncCategories(countryCode string) error
+	GetCategories(countryCode string) ([]VideoCategory, error)
 }

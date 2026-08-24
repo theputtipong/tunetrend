@@ -43,6 +43,11 @@ func (m *MockYouTubeRepository) FetchTrending(countryCode string) ([]domain.Song
 	return args.Get(0).([]domain.Song), args.Error(1)
 }
 
+func (m *MockYouTubeRepository) FetchVideoCategories(countryCode string) ([]domain.VideoCategory, error) {
+	args := m.Called(countryCode)
+	return args.Get(0).([]domain.VideoCategory), args.Error(1)
+}
+
 func TestGetTrends_Success(t *testing.T) {
 	mockDB := new(MockSongRepository)
 	mockYT := new(MockYouTubeRepository)

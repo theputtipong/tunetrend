@@ -90,6 +90,56 @@ func (r *youtubeRepository) FetchTrending(countryCode string) ([]domain.Song, er
 	return songs, nil
 }
 
+func (r *youtubeRepository) FetchVideoCategories(countryCode string) ([]domain.VideoCategory, error) {
+	url := fmt.Sprintf(
+		"https://www.googleapis.com/youtube/v3/videoCategories?part=snippet&regionCode=%s",
+		countryCode,
+	)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-goog-api-key", r.apiKey)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("youtube api error status: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	var ytResp struct {
+		Items []struct {
+			ID      string `json:"id"`
+			Snippet struct {
+				Title      string `json:"title"`
+				Assignable bool   `json:"assignable"`
+			} `json:"snippet"`
+		} `json:"items"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&ytResp); err != nil {
+		return nil, err
+	}
+
+	var categories []domain.VideoCategory
+	for _, item := range ytResp.Items {
+		categories = append(categories, domain.VideoCategory{
+			ID:          item.ID,
+			CountryCode: countryCode,
+			Title:       item.Snippet.Title,
+			Assignable:  item.Snippet.Assignable,
+		})
+	}
+
+	return categories, nil
+}
+
 func detectVideoType(title string) string {
 	tokens := strings.FieldsFunc(strings.ToLower(title), func(r rune) bool {
 		return !unicode.IsLetter(r) && !unicode.IsDigit(r)

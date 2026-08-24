@@ -46,8 +46,12 @@ func main() {
 
 	apiLogRepo := postgres.NewApiLogRepository(db)
 
+	categoryRepo := postgres.NewVideoCategoryRepository(db)
+	categoryUsecase := usecase.NewVideoCategoryUsecase(categoryRepo, ytRepo)
+
 	go worker.StartYouTubeSync(songUsecase, workerLogRepo)
 	go worker.StartApiLogCleanup(apiLogRepo)
+	go worker.StartVideoCategorySync(categoryUsecase, workerLogRepo)
 
 	app := fiber.New(fiber.Config{BodyLimit: 1 * 1024 * 1024})
 

@@ -47,7 +47,7 @@ func Connect() *gorm.DB {
 	sqlDB.SetMaxOpenConns(50)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-	err = db.AutoMigrate(&domain.Song{}, &domain.WorkerLog{}, &domain.ContactMessage{}, &domain.ApiLog{})
+	err = db.AutoMigrate(&domain.Song{}, &domain.WorkerLog{}, &domain.ContactMessage{}, &domain.ApiLog{}, &domain.VideoCategory{})
 	if err != nil {
 		log.Fatalf("❌ ล้มเหลวในการ Auto Migrate: %v", err)
 	}

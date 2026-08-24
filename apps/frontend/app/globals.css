@@ -1,0 +1,360 @@
+@import "tailwindcss";
+
+/* Light เป็นค่า default — Dark ครอบทับผ่าน prefers-color-scheme และ [data-theme]
+   (ตัว [data-theme] มาจาก ThemeToggle ที่ผู้ใช้กดเลือกเอง อยู่เหนือ system preference เสมอ) */
+:root {
+  --bg: #fafafa;
+  --bg-elev: oklch(100% 0 0);
+  --bg-elev-2: oklch(93% 0.008 260);
+  --border: oklch(84% 0.012 260 / 70%);
+  --text: oklch(22% 0.012 260);
+  --text-2: oklch(42% 0.012 260);
+  --text-3: oklch(56% 0.012 260);
+  --accent: #ff7a47;
+  --accent-ink: #ffffff;
+  --accent-hover: oklch(58% 0.19 45);
+  --thumb-from: oklch(90% 0.01 260);
+  --thumb-to: oklch(84% 0.014 260);
+  --error-bg: oklch(93% 0.05 45);
+  --error-text: oklch(45% 0.16 45);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: oklch(15% 0.014 260);
+    --bg-elev: oklch(19% 0.014 260);
+    --bg-elev-2: oklch(23% 0.016 260);
+    --border: oklch(30% 0.014 260 / 50%);
+    --text: oklch(97% 0.004 260);
+    --text-2: oklch(68% 0.01 260);
+    --text-3: oklch(50% 0.01 260);
+    --accent-hover: oklch(80% 0.18 45);
+    --thumb-from: oklch(27% 0.02 260);
+    --thumb-to: oklch(20% 0.016 260);
+    --error-bg: oklch(27% 0.03 45);
+    --error-text: oklch(70% 0.15 45);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: oklch(15% 0.014 260);
+  --bg-elev: oklch(19% 0.014 260);
+  --bg-elev-2: oklch(23% 0.016 260);
+  --border: oklch(30% 0.014 260 / 50%);
+  --text: oklch(97% 0.004 260);
+  --text-2: oklch(68% 0.01 260);
+  --text-3: oklch(50% 0.01 260);
+  --accent-hover: oklch(80% 0.18 45);
+  --thumb-from: oklch(27% 0.02 260);
+  --thumb-to: oklch(20% 0.016 260);
+  --error-bg: oklch(27% 0.03 45);
+  --error-text: oklch(70% 0.15 45);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elev: var(--bg-elev);
+  --color-text: var(--text);
+  --font-display: var(--font-space-grotesk);
+  --font-body: var(--font-plus-jakarta);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+a {
+  color: var(--accent);
+}
+a:hover {
+  color: var(--accent-hover);
+}
+
+.font-display {
+  font-family: var(--font-display), system-ui, sans-serif;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text-2);
+  cursor: pointer;
+}
+.theme-toggle:hover {
+  background: var(--bg-elev-2);
+}
+.lang-toggle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.menu-item:hover {
+  background: var(--bg-elev-2);
+}
+
+/* Country / navigation pills */
+.pill {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  background: var(--bg-elev);
+  text-decoration: none;
+}
+.pill--active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+
+/* Tabs */
+.tabbar {
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  position: relative;
+  display: inline-block;
+  padding: 14px 2px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-3);
+  text-decoration: none;
+}
+.tab--active {
+  color: var(--text);
+}
+.tab--active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.sync-note {
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+/* Song list */
+.list-caption {
+  padding: 14px 14px 10px;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+.row:hover {
+  background: var(--bg-elev-2);
+}
+.row:hover .thumb-play {
+  background: rgba(0, 0, 0, 0.35);
+}
+.rank {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--text-3);
+  flex-shrink: 0;
+  text-align: center;
+}
+.rank--top {
+  color: var(--accent);
+}
+.thumb {
+  border-radius: 10px;
+  background: linear-gradient(160deg, var(--thumb-from), var(--thumb-to));
+  flex-shrink: 0;
+}
+.title {
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.channel {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.views {
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.time {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+/* About page stat cards */
+.stat-card {
+  padding: 16px 14px;
+  border-radius: 14px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+}
+.stat-value {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--accent);
+}
+.stat-label {
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-3);
+}
+
+/* Empty / error state */
+.state-icon {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.state-icon--error {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+.state-icon--empty {
+  background: var(--bg-elev-2);
+  color: var(--text-3);
+}
+.state-title {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 21px;
+}
+.state-subtitle {
+  font-size: 14px;
+  color: var(--text-2);
+  max-width: 380px;
+  line-height: 1.5;
+}
+.retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Onboarding tour (driver.js) — override default theme กับ CSS var เดิมของแอป
+   เพื่อให้ popover เข้ากับ light/dark theme อัตโนมัติ */
+.tunetrend-tour {
+  background: var(--bg-elev) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border);
+}
+.tunetrend-tour .driver-popover-title {
+  color: var(--text) !important;
+}
+.tunetrend-tour .driver-popover-description {
+  color: var(--text-2) !important;
+}
+.tunetrend-tour .driver-popover-progress-text {
+  color: var(--text-3) !important;
+}
+.tunetrend-tour .driver-popover-footer button {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  text-shadow: none !important;
+  border: none !important;
+}
+.tunetrend-tour .driver-popover-footer .driver-popover-prev-btn {
+  background: var(--bg-elev-2) !important;
+  color: var(--text) !important;
+}
+.tunetrend-tour .driver-popover-arrow-side-top {
+  border-top-color: var(--bg-elev) !important;
+}
+.tunetrend-tour .driver-popover-arrow-side-bottom {
+  border-bottom-color: var(--bg-elev) !important;
+}
+.tunetrend-tour .driver-popover-arrow-side-left {
+  border-left-color: var(--bg-elev) !important;
+}
+.tunetrend-tour .driver-popover-arrow-side-right {
+  border-right-color: var(--bg-elev) !important;
+}

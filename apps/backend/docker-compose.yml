@@ -1,0 +1,29 @@
+# กำหนดชื่อโปรเจกต์หลัก (จะถูกนำไปใช้เป็น Prefix ตอนสร้าง Network และ Volume)
+name: tunetrend-workspace
+
+version: "3.8"
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: tunetrend-postgres-db
+    # การใส่ Labels เพื่อระบุรายละเอียดของแอปพลิเคชันและเจ้าของ
+    labels:
+      - "maintainer=Pdouvch"
+      - "project.name=TuneTrend"
+      - "project.environment=development"
+      - "description=PostgreSQL Database for TuneTrend Backend API"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: tunetrend
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+    # ระบุเจ้าของ Volume เพื่อป้องกันการเผลอลบข้อมูลผิดโปรเจกต์
+    labels:
+      - "owner=Pdouvch"
+      - "project=TuneTrend"

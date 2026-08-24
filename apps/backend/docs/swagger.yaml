@@ -1,0 +1,134 @@
+basePath: /
+definitions:
+  internal_delivery_http.ContactRequest:
+    properties:
+      contactEmail:
+        type: string
+      contactPhone:
+        type: string
+      message:
+        type: string
+      name:
+        type: string
+      website:
+        description: |-
+          Website คือ honeypot field — ต้องซ่อนไว้ฝั่ง client (CSS/aria-hidden)
+          ผู้ใช้จริงต้องไม่มีทางกรอกค่านี้ ถ้ามีค่าแปลว่าเป็นบอท
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Backend Service สำหรับดึงข้อมูลเทรนด์เพลงฮิตจาก YouTube
+  title: TuneTrend API
+  version: "1.0"
+paths:
+  /contact:
+    post:
+      consumes:
+      - application/json
+      description: รับข้อความจากผู้ใช้พร้อมช่องทางติดต่อกลับ (อีเมลหรือเบอร์โทรไทย)
+        บันทึกลงฐานข้อมูลและส่งอีเมลแจ้งเตือนผู้พัฒนา
+      parameters:
+      - description: ข้อมูลฟอร์มติดต่อ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http.ContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ส่งข้อความสำเร็จ
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ข้อมูลไม่ถูกต้อง เช่น เบอร์โทรไม่ใช่รูปแบบไทย
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: ส่งคำขอถี่เกินไป
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: เกิดข้อผิดพลาดที่เซิร์ฟเวอร์
+          schema:
+            additionalProperties: true
+            type: object
+      summary: ส่งข้อความติดต่อถึงผู้พัฒนา
+      tags:
+      - Contact
+  /trends:
+    get:
+      consumes:
+      - application/json
+      description: ดึงข้อมูลเพลงเทรนด์ดิ้งตามรหัสประเทศ (เช่น TH, US) จากฐานข้อมูล
+      parameters:
+      - description: 'รหัสประเทศ (Default: TH)'
+        in: query
+        name: country
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: คืนค่ารายการเพลงฮิต
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: เกิดข้อผิดพลาดที่เซิร์ฟเวอร์
+          schema:
+            additionalProperties: true
+            type: object
+      summary: ดึงข้อมูลเพลงฮิต
+      tags:
+      - Songs
+  /trends/mv:
+    get:
+      consumes:
+      - application/json
+      description: คัดกรองเฉพาะเทรนด์เพลงที่ระบบ AI วิเคราะห์ว่าเป็น Official Music
+        Video
+      parameters:
+      - description: 'รหัสประเทศ (Default: TH)'
+        in: query
+        name: country
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: คืนค่ารายการ MV
+          schema:
+            additionalProperties: true
+            type: object
+      summary: ดึงเฉพาะคลิป Official MV
+      tags:
+      - Songs
+  /trends/new:
+    get:
+      consumes:
+      - application/json
+      description: คัดกรองเฉพาะเพลงเทรนด์ดิ้งที่เพิ่งปล่อยออกมาภายใน 7 วันที่ผ่านมา
+      parameters:
+      - description: 'รหัสประเทศ (Default: TH)'
+        in: query
+        name: country
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: คืนค่ารายการเพลงใหม่
+          schema:
+            additionalProperties: true
+            type: object
+      summary: ดึงเพลงฮิตมาใหม่ (ไม่เกิน 7 วัน)
+      tags:
+      - Songs
+swagger: "2.0"

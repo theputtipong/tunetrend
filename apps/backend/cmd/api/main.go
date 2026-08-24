@@ -11,6 +11,7 @@ import (
 	"tunetrend-backend/internal/core/mail"
 	"tunetrend-backend/internal/core/ratelimit"
 	"tunetrend-backend/internal/delivery/http"
+	"tunetrend-backend/internal/domain"
 	"tunetrend-backend/internal/repository/postgres"
 	"tunetrend-backend/internal/repository/youtube"
 	"tunetrend-backend/internal/usecase"
@@ -52,6 +53,12 @@ func main() {
 	go worker.StartYouTubeSync(songUsecase, workerLogRepo)
 	go worker.StartApiLogCleanup(apiLogRepo)
 	go worker.StartVideoCategorySync(categoryUsecase, workerLogRepo)
+
+	for _, cfg := range domain.CategoryVideoConfigs {
+		catVideoRepo := postgres.NewCategoryVideoRepository(db, cfg.TableName)
+		catVideoUsecase := usecase.NewCategoryVideoUsecase(catVideoRepo, ytRepo, cfg.CategoryID, cfg.Label)
+		go worker.StartCategoryVideoSync(cfg.TableName, catVideoUsecase, workerLogRepo)
+	}
 
 	app := fiber.New(fiber.Config{BodyLimit: 1 * 1024 * 1024})
 

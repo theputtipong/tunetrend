@@ -15,6 +15,8 @@ import (
 
 var httpClient = &http.Client{Timeout: 10 * time.Second}
 
+const apiKeyHeader = "X-goog-api-key"
+
 type youtubeRepository struct {
 	apiKey string
 }
@@ -35,7 +37,7 @@ func (r *youtubeRepository) FetchTrending(countryCode string) ([]domain.Song, er
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-goog-api-key", r.apiKey)
+	req.Header.Set(apiKeyHeader, r.apiKey)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -100,7 +102,7 @@ func (r *youtubeRepository) FetchVideoCategories(countryCode string) ([]domain.V
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-goog-api-key", r.apiKey)
+	req.Header.Set(apiKeyHeader, r.apiKey)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -138,6 +140,68 @@ func (r *youtubeRepository) FetchVideoCategories(countryCode string) ([]domain.V
 	}
 
 	return categories, nil
+}
+
+func (r *youtubeRepository) FetchTrendingByCategory(countryCode, categoryID string) ([]domain.CategoryVideo, error) {
+	url := fmt.Sprintf(
+		"https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,id&chart=mostPopular&videoCategoryId=%s&regionCode=%s&maxResults=50",
+		categoryID, countryCode,
+	)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set(apiKeyHeader, r.apiKey)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("youtube api error status: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	var ytResp struct {
+		Items []struct {
+			ID      string `json:"id"`
+			Snippet struct {
+				Title        string    `json:"title"`
+				ChannelTitle string    `json:"channelTitle"`
+				PublishedAt  time.Time `json:"publishedAt"`
+				Thumbnails   struct {
+					High struct {
+						URL string `json:"url"`
+					} `json:"high"`
+				} `json:"thumbnails"`
+			} `json:"snippet"`
+			Statistics struct {
+				ViewCount string `json:"viewCount"`
+			} `json:"statistics"`
+		} `json:"items"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&ytResp); err != nil {
+		return nil, err
+	}
+
+	var videos []domain.CategoryVideo
+	for _, item := range ytResp.Items {
+		videos = append(videos, domain.CategoryVideo{
+			ID:           item.ID,
+			Title:        item.Snippet.Title,
+			ChannelTitle: item.Snippet.ChannelTitle,
+			ThumbnailURL: item.Snippet.Thumbnails.High.URL,
+			ViewCount:    item.Statistics.ViewCount,
+			CountryCode:  countryCode,
+			PublishedAt:  item.Snippet.PublishedAt,
+		})
+	}
+
+	return videos, nil
 }
 
 func detectVideoType(title string) string {

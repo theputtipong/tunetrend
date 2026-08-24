@@ -30,3 +30,30 @@ func (u *videoCategoryUsecase) SyncCategories(countryCode string) error {
 	log.Printf("✅ [Usecase] ซิงก์หมวดหมู่ %s สำเร็จ จำนวน %d รายการ\n", countryCode, len(categories))
 	return nil
 }
+
+func (u *videoCategoryUsecase) GetCategories(countryCode string) ([]domain.VideoCategory, error) {
+	if countryCode == "" {
+		countryCode = "TH"
+	}
+
+	categories, err := u.categoryRepo.GetAssignableCategories(countryCode)
+	if err != nil {
+		return nil, err
+	}
+
+	// เหลือเฉพาะหมวดที่มีตารางวิดีโอ sync ไว้จริง (domain.CategoryVideoConfigs) —
+	// ไม่งั้นหน้าบ้านจะเลือกหมวดที่ /trends ไม่มีข้อมูลให้ดึงเลย
+	trackable := make(map[string]bool, len(domain.CategoryVideoConfigs))
+	for _, cfg := range domain.CategoryVideoConfigs {
+		trackable[cfg.CategoryID] = true
+	}
+
+	filtered := make([]domain.VideoCategory, 0, len(categories))
+	for _, c := range categories {
+		if trackable[c.ID] {
+			filtered = append(filtered, c)
+		}
+	}
+
+	return filtered, nil
+}

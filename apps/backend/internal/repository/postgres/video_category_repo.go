@@ -25,3 +25,11 @@ func (r *videoCategoryRepository) UpsertCategories(categories []domain.VideoCate
 		DoUpdates: clause.AssignmentColumns([]string{"title", "assignable"}),
 	}).Create(&categories).Error
 }
+
+func (r *videoCategoryRepository) GetAssignableCategories(countryCode string) ([]domain.VideoCategory, error) {
+	var categories []domain.VideoCategory
+	err := r.db.Where("country_code = ? AND assignable = ?", countryCode, true).
+		Order("title ASC").
+		Find(&categories).Error
+	return categories, err
+}

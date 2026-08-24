@@ -11,6 +11,7 @@ import (
 	"tunetrend-backend/internal/core/mail"
 	"tunetrend-backend/internal/core/ratelimit"
 	"tunetrend-backend/internal/delivery/http"
+	"tunetrend-backend/internal/domain"
 	"tunetrend-backend/internal/repository/postgres"
 	"tunetrend-backend/internal/repository/youtube"
 	"tunetrend-backend/internal/usecase"
@@ -36,7 +37,16 @@ func main() {
 	songRepo := postgres.NewSongRepository(db)
 	ytRepo := youtube.NewYouTubeRepository()
 	workerLogRepo := postgres.NewWorkerLogRepository(db)
-	songUsecase := usecase.NewSongUsecase(songRepo, ytRepo)
+
+	categoryRepos := make(map[string]domain.CategoryVideoRepository, len(domain.CategoryVideoConfigs))
+	for _, cfg := range domain.CategoryVideoConfigs {
+		catVideoRepo := postgres.NewCategoryVideoRepository(db, cfg.TableName)
+		categoryRepos[cfg.CategoryID] = catVideoRepo
+		catVideoUsecase := usecase.NewCategoryVideoUsecase(catVideoRepo, ytRepo, cfg.CategoryID, cfg.Label)
+		go worker.StartCategoryVideoSync(cfg.TableName, catVideoUsecase, workerLogRepo)
+	}
+
+	songUsecase := usecase.NewSongUsecase(songRepo, ytRepo, categoryRepos)
 	songHandler := http.NewSongHandler(songUsecase)
 
 	contactRepo := postgres.NewContactRepository(db)
@@ -48,6 +58,7 @@ func main() {
 
 	categoryRepo := postgres.NewVideoCategoryRepository(db)
 	categoryUsecase := usecase.NewVideoCategoryUsecase(categoryRepo, ytRepo)
+	categoryHandler := http.NewVideoCategoryHandler(categoryUsecase)
 
 	go worker.StartYouTubeSync(songUsecase, workerLogRepo)
 	go worker.StartApiLogCleanup(apiLogRepo)
@@ -97,6 +108,7 @@ func main() {
 	app.Get("/trends", trendsRateLimit, songHandler.GetTrends)
 	app.Get("/trends/new", trendsRateLimit, songHandler.GetNewReleases)
 	app.Get("/trends/mv", trendsRateLimit, songHandler.GetMVs)
+	app.Get("/categories", trendsRateLimit, categoryHandler.GetCategories)
 
 	contactRateLimit := ratelimit.New(5, 10*time.Minute).FailClosed().Middleware()
 	app.Post("/contact", contactRateLimit, contactHandler.SubmitContact)

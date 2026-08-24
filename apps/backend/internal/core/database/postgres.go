@@ -52,6 +52,12 @@ func Connect() *gorm.DB {
 		log.Fatalf("❌ ล้มเหลวในการ Auto Migrate: %v", err)
 	}
 
+	for _, cfg := range domain.CategoryVideoConfigs {
+		if err := db.Table(cfg.TableName).AutoMigrate(&domain.CategoryVideo{}); err != nil {
+			log.Fatalf("❌ ล้มเหลวในการ Auto Migrate ตาราง %s: %v", cfg.TableName, err)
+		}
+	}
+
 	log.Println("✅ เชื่อมต่อ Database และ Auto Migrate สำเร็จ!")
 	return db
 }

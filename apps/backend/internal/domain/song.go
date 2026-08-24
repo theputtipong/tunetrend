@@ -26,11 +26,12 @@ type SongRepository interface {
 type YouTubeRepository interface {
 	FetchTrending(countryCode string) ([]Song, error)
 	FetchVideoCategories(countryCode string) ([]VideoCategory, error)
+	FetchTrendingByCategory(countryCode, categoryID string) ([]CategoryVideo, error)
 }
 
 type SongUsecase interface {
 	SyncTrendingMusic(countryCode string) error
-	GetTrends(countryCode string) ([]Song, error)
-	GetNewReleases(countryCode string) ([]Song, error)
+	GetTrends(countryCode, categoryID string) ([]Song, error)
+	GetNewReleases(countryCode, categoryID string) ([]Song, error)
 	GetMVs(countryCode string) ([]Song, error)
 }

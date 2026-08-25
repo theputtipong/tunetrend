@@ -1,0 +1,16 @@
+node_modules
+package-lock.json
+*.lock
+
+apps/frontend/node_modules
+apps/frontend/.next
+apps/frontend/out
+apps/frontend/build
+apps/frontend/coverage
+apps/frontend/*.tsbuildinfo
+apps/frontend/next-env.d.ts
+
+apps/backend/tmp
+apps/backend/bin
+
+apps/mobile

@@ -1,3 +1,7 @@
+# Node (root tooling: husky, commitlint, prettier)
+/node_modules
+.husky/_
+
 # OS generated files
 .DS_Store
 .DS_Store?

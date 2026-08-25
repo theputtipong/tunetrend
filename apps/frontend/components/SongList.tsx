@@ -27,7 +27,7 @@ export async function SongList({
   }
 
   return (
-    <div className="flex flex-col gap-0.5 px-4 pb-8 pt-1 md:px-8">
+    <div className="flex flex-col gap-0.5 px-4 pb-8 pt-3 md:px-8">
       <p className="list-caption">{t.songList.caption(songs.length, countryName)}</p>
       {songs.map((song, index) => (
         <SongRow key={`${song.id}-${song.countryCode}`} song={song} rank={index + 1} lang={lang} />

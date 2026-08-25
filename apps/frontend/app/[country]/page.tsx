@@ -33,7 +33,10 @@ export default async function CountryTrendsPage({
   const tab = resolveTab(rawTab);
   const categories = await fetchCategories(country);
   const category = resolveCategory(rawCategory, categories);
+  // แท็บ "mv" รองรับเฉพาะหมวดเพลง (ตาราง Song เท่านั้นที่มี videoType) ถ้ามี category
+  // ติดมาจาก URL ที่ไม่ถูกต้อง (เช่น bookmark เก่า) ให้ทิ้งไปแทนที่จะส่งไปหา backend เปล่าๆ
+  const effectiveCategory = tab === "mv" ? "" : category;
   const lang = await getLang();
 
-  return <SongList country={country} tab={tab} category={category} lang={lang} />;
+  return <SongList country={country} tab={tab} category={effectiveCategory} lang={lang} />;
 }

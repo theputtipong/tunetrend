@@ -10,10 +10,11 @@ export const th: Dictionary = {
     buyCoffee: "เลี้ยงกาแฟผู้พัฒนา",
     replayTour: "ดูแนะนำการใช้งานระบบอีกครั้ง",
     menu: "ตัวเลือกเพิ่มเติม",
+    musicCategory: "เพลง",
   },
   tabs: {
     trending: "กำลังฮิต",
-    new: "เพลงใหม่",
+    new: "ล่าสุด",
     mv: "มิวสิควิดีโอ",
   },
   countryPageTitle: (countryName) => `กำลังฮิตใน${countryName} · TuneTrend`,

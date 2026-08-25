@@ -34,7 +34,7 @@ func (r *categoryVideoRepository) GetVideos(countryCode string) ([]domain.Catego
 	err := r.db.Table(r.tableName).
 		Where("country_code = ?", countryCode).
 		Order("CAST(view_count AS BIGINT) DESC").
-		Limit(50).
+		Limit(maxListResults).
 		Find(&videos).Error
 	return videos, err
 }
@@ -46,7 +46,7 @@ func (r *categoryVideoRepository) GetNewVideos(countryCode string) ([]domain.Cat
 	err := r.db.Table(r.tableName).
 		Where("country_code = ? AND published_at >= ?", countryCode, sevenDaysAgo).
 		Order("CAST(view_count AS BIGINT) DESC").
-		Limit(50).
+		Limit(maxListResults).
 		Find(&videos).Error
 	return videos, err
 }

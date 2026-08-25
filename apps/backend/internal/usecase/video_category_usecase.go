@@ -36,13 +36,13 @@ func (u *videoCategoryUsecase) GetCategories(countryCode string) ([]domain.Video
 		countryCode = "TH"
 	}
 
-	categories, err := u.categoryRepo.GetAssignableCategories(countryCode)
+	categories, err := u.categoryRepo.GetActiveCategories(countryCode)
 	if err != nil {
 		return nil, err
 	}
 
-	// เหลือเฉพาะหมวดที่มีตารางวิดีโอ sync ไว้จริง (domain.CategoryVideoConfigs) —
-	// ไม่งั้นหน้าบ้านจะเลือกหมวดที่ /trends ไม่มีข้อมูลให้ดึงเลย
+	// กันเหนียวอีกชั้น เผื่อแอดมินเผลอตั้ง is_active=true ให้หมวดที่ยังไม่มีตารางวิดีโอ sync จริง
+	// (domain.CategoryVideoConfigs คือ source of truth ว่าหมวดไหนมีตาราง/worker sync ให้แล้ว)
 	trackable := make(map[string]bool, len(domain.CategoryVideoConfigs))
 	for _, cfg := range domain.CategoryVideoConfigs {
 		trackable[cfg.CategoryID] = true

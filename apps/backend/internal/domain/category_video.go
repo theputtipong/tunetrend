@@ -39,5 +39,4 @@ var CategoryVideoConfigs = []CategoryVideoConfig{
 	{CategoryID: "20", TableName: "gaming_videos", Label: "Gaming"},
 	{CategoryID: "24", TableName: "entertainment_videos", Label: "Entertainment"},
 	{CategoryID: "25", TableName: "news_politics_videos", Label: "News & Politics"},
-	{CategoryID: "27", TableName: "education_videos", Label: "Education"},
 }

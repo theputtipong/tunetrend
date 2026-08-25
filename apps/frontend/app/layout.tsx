@@ -3,6 +3,7 @@ import { Space_Grotesk, Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getLang } from "@/lib/i18n/server";
+import { ClsDebugLogger } from "@/components/ClsDebugLogger";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
@@ -57,6 +58,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <SpeedInsights />
         <ServiceWorkerRegister />
         <InstallPrompt lang={lang} />
+        <ClsDebugLogger />
       </body>
     </html>
   );

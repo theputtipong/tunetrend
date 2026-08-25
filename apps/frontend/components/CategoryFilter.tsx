@@ -21,7 +21,9 @@ export function CategoryFilter({
 
   return (
     <div
-      className="flex flex-wrap items-center gap-2 px-4 py-3 md:px-8"
+      // min-h กันไว้สำหรับ 2 บรรทัด (pill min-height 36px + gap 8px + padding 24px)
+      // ป้องกัน layout shift ถ้า label ยาวขึ้น (เช่นภาษาไทย) แล้วดัน pill ตกบรรทัดใหม่หลัง first paint
+      className="flex min-h-[104px] flex-wrap items-center gap-2 px-4 py-3 md:px-8"
       data-tour="category-filter"
     >
       {options.map((cat) => {

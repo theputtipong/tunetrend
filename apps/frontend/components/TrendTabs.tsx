@@ -10,14 +10,14 @@ export function TrendTabs({
 }: Readonly<{ country: string; active: TabKey; category: string; lang: Lang }>) {
   const t = dictionaries[lang].tabs;
 
+  // แท็บ "mv" มีเฉพาะหมวดเพลง (ตาราง Song เท่านั้นที่มี videoType ให้แยก MV ออกมาได้
+  // ตาราง CategoryVideo ของหมวดอื่นไม่มี field นี้) จึงซ่อนแท็บนี้ไปเลยเมื่อเลือกหมวดอื่น
+  const visibleTabs = category ? TABS.filter((key) => key !== "mv") : TABS;
+
   return (
     <div className="flex gap-7" data-tour="tabs">
-      {TABS.map((key) => {
-        // "mv" ไม่รองรับการกรองตามหมวดหมู่ (ตาราง CategoryVideo ไม่มี videoType) จึงทิ้ง category ทิ้งเมื่อสลับไปแท็บนี้
-        const href =
-          key !== "mv" && category
-            ? `/${country}?tab=${key}&category=${category}`
-            : `/${country}?tab=${key}`;
+      {visibleTabs.map((key) => {
+        const href = category ? `/${country}?tab=${key}&category=${category}` : `/${country}?tab=${key}`;
 
         return (
           <Link key={key} href={href} className={key === active ? "tab tab--active" : "tab"}>

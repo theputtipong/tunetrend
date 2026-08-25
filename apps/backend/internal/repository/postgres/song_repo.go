@@ -8,6 +8,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// maxListResults จำกัดจำนวนแถวสูงสุดที่ endpoint รายการเพลง/วิดีโอจะคืนให้ในแต่ละครั้ง
+// ใช้ค่าเดียวกันทั้ง Song และ CategoryVideo repository เพื่อไม่ให้ payload หน้า list ใหญ่เกินจำเป็น
+const maxListResults = 30
+
 type songRepository struct {
 	db *gorm.DB
 }
@@ -31,7 +35,7 @@ func (r *songRepository) GetTrends(countryCode string) ([]domain.Song, error) {
 	var songs []domain.Song
 	err := r.db.Where("country_code = ?", countryCode).
 		Order("CAST(view_count AS BIGINT) DESC").
-		Limit(50).Find(&songs).Error
+		Limit(maxListResults).Find(&songs).Error
 	return songs, err
 }
 
@@ -41,7 +45,7 @@ func (r *songRepository) GetNewReleases(countryCode string) ([]domain.Song, erro
 
 	err := r.db.Where("country_code = ? AND published_at >= ?", countryCode, sevenDaysAgo).
 		Order("CAST(view_count AS BIGINT) DESC").
-		Limit(50).
+		Limit(maxListResults).
 		Find(&songs).Error
 	return songs, err
 }
@@ -50,7 +54,7 @@ func (r *songRepository) GetMVs(countryCode string) ([]domain.Song, error) {
 	var songs []domain.Song
 	err := r.db.Where("country_code = ? AND video_type = ?", countryCode, "MV").
 		Order("CAST(view_count AS BIGINT) DESC").
-		Limit(50).
+		Limit(maxListResults).
 		Find(&songs).Error
 	return songs, err
 }

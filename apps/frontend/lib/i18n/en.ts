@@ -8,6 +8,7 @@ export const en = {
     buyCoffee: "Buy me a coffee",
     replayTour: "Show me around again",
     menu: "More options",
+    musicCategory: "Music",
   },
   tabs: {
     trending: "Trending",

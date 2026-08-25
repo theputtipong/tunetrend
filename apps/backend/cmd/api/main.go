@@ -50,7 +50,7 @@ func main() {
 	songHandler := http.NewSongHandler(songUsecase)
 
 	contactRepo := postgres.NewContactRepository(db)
-	mailer := mail.NewSMTPMailer()
+	mailer := mail.NewResendMailer()
 	contactUsecase := usecase.NewContactUsecase(contactRepo, mailer)
 	contactHandler := http.NewContactHandler(contactUsecase)
 

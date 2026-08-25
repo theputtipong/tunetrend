@@ -57,7 +57,7 @@ func main() {
 	apiLogRepo := postgres.NewApiLogRepository(db)
 
 	categoryRepo := postgres.NewVideoCategoryRepository(db)
-	categoryUsecase := usecase.NewVideoCategoryUsecase(categoryRepo, ytRepo)
+	categoryUsecase := usecase.NewVideoCategoryUsecase(categoryRepo, ytRepo, workerLogRepo)
 	categoryHandler := http.NewVideoCategoryHandler(categoryUsecase)
 
 	go worker.StartYouTubeSync(songUsecase, workerLogRepo)

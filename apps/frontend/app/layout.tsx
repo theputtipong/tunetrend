@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { getLang } from "@/lib/i18n/server";
+import { ClsDebugLogger } from "@/components/ClsDebugLogger";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
@@ -55,6 +56,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <Analytics />
         <ServiceWorkerRegister />
         <InstallPrompt lang={lang} />
+        <ClsDebugLogger />
       </body>
     </html>
   );

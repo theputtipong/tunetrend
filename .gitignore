@@ -1,0 +1,50 @@
+# Node (root tooling: husky, commitlint, prettier)
+/node_modules
+.husky/_
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+node_modules/
+
+# Backend (Go)
+/backend/bin/
+/apps/backend/tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Mobile (Flutter/Dart)
+/mobile/.dart_tool/
+/mobile/.flutter-plugins
+/mobile/.flutter-plugins-dependencies
+/mobile/.pub-cache/
+/mobile/.pub/
+/mobile/build/
+/mobile/ios/Pods/
+/mobile/ios/.symlinks/
+*.jks
+*.keystore
+
+# IDEs & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment Variables
+*.env
+*.env.local
+
+*.md
+tmp/
+.claude/

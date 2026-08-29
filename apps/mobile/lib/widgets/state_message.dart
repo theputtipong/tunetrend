@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../constants/theme.dart';
 
 enum StateMessageVariant { error, empty }
@@ -37,7 +38,9 @@ class StateMessage extends StatelessWidget {
                 color: isError ? AppColors.errorBg : AppColors.surfaceRaised,
               ),
               child: Icon(
-                isError ? Icons.warning_amber_rounded : Icons.inventory_2_outlined,
+                isError
+                    ? Icons.warning_amber_rounded
+                    : Icons.inventory_2_outlined,
                 size: 40,
                 color: isError ? AppColors.errorText : AppColors.textTertiary,
               ),
@@ -65,11 +68,19 @@ class StateMessage extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.accentInk,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
                 icon: const Icon(Icons.refresh, size: 18),
-                label: Text(retryLabel, style: const TextStyle(fontWeight: FontWeight.w700)),
+                label: Text(
+                  retryLabel,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ],

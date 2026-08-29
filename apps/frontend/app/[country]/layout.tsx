@@ -1,8 +1,5 @@
 import { notFound } from "next/navigation";
-import { isValidCountry, type CountryCode } from "@/lib/countries";
-import { getLang } from "@/lib/i18n/server";
-import { fetchCategories } from "@/lib/api";
-import { NavBar } from "@/components/NavBar";
+import { isValidCountry } from "@/lib/countries";
 
 export default async function CountryLayout({
   children,
@@ -12,17 +9,9 @@ export default async function CountryLayout({
   params: Promise<{ country: string }>;
 }>) {
   const { country: rawCountry } = await params;
-  const country = rawCountry.toUpperCase();
-  if (!isValidCountry(country)) {
+  if (!isValidCountry(rawCountry.toUpperCase())) {
     notFound();
   }
-  const lang = await getLang();
-  const categories = await fetchCategories(country as CountryCode);
 
-  return (
-    <div className="mx-auto max-w-6xl">
-      <NavBar country={country} lang={lang} categories={categories} />
-      {children}
-    </div>
-  );
+  return children;
 }

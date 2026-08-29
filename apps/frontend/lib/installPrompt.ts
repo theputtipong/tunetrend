@@ -40,7 +40,7 @@ export const INSTALL_PROMPT_CONFIG: { android: AndroidInstallMode; ios: IosInsta
 };
 
 export const PLAY_STORE_URL =
-  process.env.NEXT_PUBLIC_PLAY_STORE_URL ??
+  process.env.NEXT_PUBLIC_PLAY_STORE_URL ||
   "https://play.google.com/store/apps/details?id=com.tunetrend.tunetrend_mobile";
 
 export const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL ?? "";

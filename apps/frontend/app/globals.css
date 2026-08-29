@@ -17,6 +17,14 @@
   --thumb-to: oklch(84% 0.014 260);
   --error-bg: oklch(93% 0.05 45);
   --error-text: oklch(45% 0.16 45);
+  /* ตั้งใจสลับ tone กลับด้าน (ไม่ใช่สีเดียวกับธีม) สำหรับ overlay "now playing"
+     — ให้เด่นออกมาจากพื้นหลังปกติ เหมือน mobile (song_tile.dart) */
+  --now-playing-overlay: rgba(0, 0, 0, 0.72);
+  /* พื้นหลังโซนเล่นวิดีโอ ตั้งใจสลับ tone กลับด้านจากธีมหลักเช่นกัน
+     (light theme -> โซนวิดีโอเข้ม, dark theme -> โซนวิดีโอสว่าง) */
+  --player-bg: #000000;
+  --player-fg: #ffffff;
+  --player-banner-bg: #2a2d37;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -33,6 +41,10 @@
     --thumb-to: oklch(20% 0.016 260);
     --error-bg: oklch(27% 0.03 45);
     --error-text: oklch(70% 0.15 45);
+    --now-playing-overlay: rgba(255, 255, 255, 0.72);
+    --player-bg: #f2f2f4;
+    --player-fg: #14151a;
+    --player-banner-bg: #dfe0e6;
   }
 }
 
@@ -49,6 +61,10 @@
   --thumb-to: oklch(20% 0.016 260);
   --error-bg: oklch(27% 0.03 45);
   --error-text: oklch(70% 0.15 45);
+  --now-playing-overlay: rgba(255, 255, 255, 0.72);
+  --player-bg: #f2f2f4;
+  --player-fg: #14151a;
+  --player-banner-bg: #dfe0e6;
 }
 
 @theme inline {
@@ -357,4 +373,18 @@ a:hover {
 }
 .tunetrend-tour .driver-popover-arrow-side-right {
   border-right-color: var(--bg-elev) !important;
+}
+
+/* Now-playing equalizer bars (watch queue) */
+@keyframes now-playing-bar {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.now-playing-bar {
+  animation: now-playing-bar 0.9s ease-in-out infinite;
 }

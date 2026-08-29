@@ -1,7 +1,11 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:firebase_performance_dio/firebase_performance_dio.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
+
 import '../constants/tabs.dart';
+import '../models/category.dart';
 import '../models/song.dart';
+import 'performance_service.dart';
 
 const String _apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
@@ -18,33 +22,78 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  final http.Client _client;
+  factory ApiClient() => _instance;
 
-  ApiClient({http.Client? client}) : _client = client ?? http.Client();
-
-  Future<List<Song>> fetchSongs(String country, TrendTab tab) async {
-    final uri = Uri.parse(
-      '$_apiBaseUrl${tab.endpointPath}',
-    ).replace(queryParameters: {'country': country});
-
-    final http.Response response;
-    try {
-      response = await _client.get(uri).timeout(const Duration(seconds: 10));
-    } catch (_) {
-      throw ApiException("Couldn't reach the TuneTrend service.");
+  ApiClient._()
+    : dio = Dio(
+        BaseOptions(
+          baseUrl: _apiBaseUrl,
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      ) {
+    dio.interceptors.add(DioFirebasePerformanceInterceptor());
+    // Request/response bodies can carry user PII (contact form details) —
+    // only log them in debug builds, never in release.
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(requestBody: true, responseBody: true),
+      );
     }
+  }
 
-    if (response.statusCode != 200) {
-      throw ApiException('TuneTrend API responded with status ${response.statusCode}');
-    }
+  static final ApiClient _instance = ApiClient._();
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    if (body['success'] != true) {
-      throw ApiException(body['error'] as String? ?? 'TuneTrend API returned an error');
-    }
+  /// The shared Dio client, wired with Firebase Performance and (debug-only)
+  /// logging interceptors. Prefer the typed methods below over calling this
+  /// directly.
+  final Dio dio;
 
-    final data = (body['data'] as List<dynamic>?) ?? const [];
-    return data.map((e) => Song.fromJson(e as Map<String, dynamic>)).toList();
+  Future<List<Song>> fetchSongs(
+    String country,
+    TrendTab tab, {
+    String categoryId = '',
+  }) {
+    return PerformanceService().traceFunction('fetch_songs', () async {
+      try {
+        final response = await dio.get(
+          tab.endpointPath,
+          queryParameters: {
+            'country': country,
+            if (categoryId.isNotEmpty) 'category': categoryId,
+          },
+        );
+        return _parseSongs(response.data as Map<String, dynamic>);
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 400 && categoryId.isNotEmpty) {
+          return fetchSongs(country, tab);
+        }
+        throw _toApiException(e);
+      }
+    });
+  }
+
+  Future<List<Category>> fetchCategories(String country) {
+    return PerformanceService().traceFunction('fetch_categories', () async {
+      try {
+        final response = await dio.get(
+          '/categories',
+          queryParameters: {'country': country},
+        );
+        final body = response.data as Map<String, dynamic>;
+        if (body['success'] != true) {
+          throw ApiException(
+            body['error'] as String? ?? 'TuneTrend API returned an error',
+          );
+        }
+        final data = (body['data'] as List<dynamic>?) ?? const [];
+        return data
+            .map((e) => Category.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } on DioException catch (e) {
+        throw _toApiException(e);
+      }
+    });
   }
 
   Future<void> submitContact({
@@ -52,34 +101,54 @@ class ApiClient {
     required String message,
     String? contactEmail,
     String? contactPhone,
-  }) async {
-    final uri = Uri.parse('$_apiBaseUrl/contact');
+  }) {
+    return PerformanceService().traceFunction('submit_contact', () async {
+      try {
+        final response = await dio.post(
+          '/contact',
+          data: {
+            'name': name ?? '',
+            'message': message,
+            'contactEmail': contactEmail ?? '',
+            'contactPhone': contactPhone ?? '',
+            'website': '',
+          },
+        );
+        final body = response.data as Map<String, dynamic>;
+        if (body['success'] != true) {
+          throw ApiException(
+            body['error'] as String? ?? 'TuneTrend API returned an error',
+            statusCode: response.statusCode,
+          );
+        }
+      } on DioException catch (e) {
+        throw _toApiException(e);
+      }
+    });
+  }
 
-    final http.Response response;
-    try {
-      response = await _client
-          .post(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'name': name ?? '',
-              'message': message,
-              'contactEmail': contactEmail ?? '',
-              'contactPhone': contactPhone ?? '',
-              'website': '',
-            }),
-          )
-          .timeout(const Duration(seconds: 10));
-    } catch (_) {
-      throw ApiException("Couldn't reach the TuneTrend service.");
-    }
-
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+  List<Song> _parseSongs(Map<String, dynamic> body) {
     if (body['success'] != true) {
       throw ApiException(
         body['error'] as String? ?? 'TuneTrend API returned an error',
-        statusCode: response.statusCode,
       );
     }
+    final data = (body['data'] as List<dynamic>?) ?? const [];
+    return data.map((e) => Song.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  ApiException _toApiException(DioException e) {
+    if (e.type == DioExceptionType.badResponse) {
+      final data = e.response?.data;
+      final serverError = data is Map<String, dynamic>
+          ? data['error'] as String?
+          : null;
+      return ApiException(
+        serverError ??
+            'TuneTrend API responded with status ${e.response?.statusCode}',
+        statusCode: e.response?.statusCode,
+      );
+    }
+    return ApiException("Couldn't reach the TuneTrend service.");
   }
 }

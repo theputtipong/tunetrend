@@ -3,7 +3,7 @@ import { Redis } from "@upstash/redis";
 
 export const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(60, "60 s"),
+  limiter: Ratelimit.slidingWindow(200, "60 s"),
   prefix: "tunetrend-ratelimit",
 });
 

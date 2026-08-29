@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'cached_thumbnail.dart';
+
 const _bmacUrl = 'https://buymeacoffee.com/theputtipong';
 
 const _bmacGifUrl =
@@ -16,21 +18,23 @@ class BuyMeCoffeeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(999),
-      onTap: () => launchUrl(Uri.parse(_bmacUrl), mode: LaunchMode.externalApplication),
+      onTap: () =>
+          launchUrl(Uri.parse(_bmacUrl), mode: LaunchMode.externalApplication),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           ClipOval(
-            child: Image.network(
-              _bmacGifUrl,
+            child: CachedThumbnail(
+              imageUrl: _bmacGifUrl,
               width: size,
               height: size,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => SizedBox(width: size, height: size),
             ),
           ),
           const SizedBox(width: 8),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
+          ),
         ],
       ),
     );

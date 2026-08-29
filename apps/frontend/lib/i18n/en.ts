@@ -9,6 +9,7 @@ export const en = {
     replayTour: "Show me around again",
     menu: "More options",
     musicCategory: "Music",
+    privacy: "Privacy Policy",
   },
   tabs: {
     trending: "Trending",
@@ -34,6 +35,33 @@ export const en = {
     daysAgo: (n: number) => `${n}d ago`,
     weeksAgo: (n: number) => `${n}w ago`,
     views: "views",
+  },
+  watch: {
+    back: "Back",
+    shareTooltip: "Share",
+    shareMessage: (title: string, url: string, appUrl?: string) => {
+      const base = `${title}\n${url}\n\nShared via TuneTrend`;
+      return appUrl ? `${base}\nGet the app: ${appUrl}` : base;
+    },
+    shareCopied: "Link copied to clipboard",
+    viewCountNoticeTooltip: "About view counts",
+    viewCountNoticeTitle: "About view counts",
+    viewCountNoticeBody:
+      "This video plays through YouTube's official embedded player. Views, " +
+      "watch time, and ad revenue are counted normally for the creator — " +
+      "exactly as on youtube.com. TuneTrend only aggregates public trending " +
+      "data via the YouTube Data API; it never downloads, rehosts, or " +
+      "interferes with your content in any way.",
+    viewCountNoticeDismiss: "Got it",
+    autoPlayPromptTitle: "Keep playing?",
+    autoPlayPromptDescription:
+      "Automatically play the next video in this list every time one finishes.",
+    autoPlayPromptAccept: "Play continuously",
+    autoPlayPromptDecline: "No thanks",
+    autoPlayPromptCountdown: (secondsLeft: number) => `Auto-continuing in ${secondsLeft}s…`,
+    autoAdvanceCountdown: (secondsLeft: number) => `Playing next in ${secondsLeft}s…`,
+    autoPlayStoppedMessage: "Continuous play stopped — you switched tabs.",
+    discoverHeading: "Explore other categories",
   },
   installPrompt: {
     title: "Get the TuneTrend app",
@@ -90,6 +118,116 @@ export const en = {
         generic: "Something went wrong. Please try again later.",
       },
     },
+  },
+  privacy: {
+    metaTitle: "Privacy Policy — TuneTrend",
+    metaDescription: "How TuneTrend collects, uses, and protects your data.",
+    backToTrends: "← Back to trends",
+    eyebrow: "Legal",
+    heading: "Privacy Policy",
+    lastUpdated: "Last updated: August 29, 2026",
+    intro:
+      'TuneTrend (the "app", "we", "us") is a small, independently-run project that shows ' +
+      "trending YouTube music and videos by country, available as a website and as Android/iOS " +
+      "apps. This page explains what data we collect, why, and how you're in control of it. " +
+      "There are no user accounts on TuneTrend — nothing here requires a login.",
+    sections: [
+      {
+        heading: "Information we collect",
+        body: [
+          "Usage analytics (Firebase Analytics on mobile, Vercel Analytics on web): anonymous, " +
+            "aggregated events like which screen you viewed, which video you played, or which " +
+            "category you filtered by. These are not tied to your name or contact details.",
+          "Crash and performance data (Firebase Crashlytics and Firebase Performance " +
+            "Monitoring, mobile only): if the app crashes or runs slowly, we automatically " +
+            "receive a stack trace and basic device/OS info so we can fix the bug.",
+          "Push notification token (mobile only, if you allow notifications): a device token " +
+            "used to send you announcements. We only send broadcast messages to everyone " +
+            "subscribed — we never target you individually or know who a token belongs to.",
+          "Contact form submissions: if you use the in-app Contact form, we receive whatever " +
+            "you type (your message, and an email or Thai phone number so we can reply). This " +
+            "is the only place TuneTrend asks for anything resembling personal contact " +
+            "information, and it's entirely optional.",
+          "IP address (server-side, transient): used only to rate-limit abuse of the contact " +
+            "form and our API. We don't log or store IP addresses long-term.",
+          "Local preferences: your theme (light/dark), language, and whether you've seen the " +
+            "onboarding tour or install prompt are saved in your browser's local storage or " +
+            "your device's app storage. This never leaves your device.",
+        ],
+      },
+      {
+        heading: "YouTube playback",
+        body: [
+          "Every video on TuneTrend plays through YouTube's official embedded player " +
+            "(iframe on web, the YouTube IFrame Player API on mobile). When you watch a video, " +
+            "your interaction with that player is subject to Google/YouTube's own Privacy " +
+            "Policy, not just ours. Views, watch time, and ad revenue are counted normally for " +
+            "the video's creator — exactly as if you watched it on youtube.com. TuneTrend never " +
+            "downloads, rehosts, or modifies anyone's video content.",
+        ],
+      },
+      {
+        heading: "Third-party services we use",
+        body: [
+          "Google Firebase (Analytics, Crashlytics, Cloud Messaging, Remote Config, " +
+            "Performance Monitoring) — mobile app infrastructure.",
+          "YouTube / Google — video playback and chart data (via the YouTube Data API).",
+          "Vercel (Analytics, Speed Insights, hosting) — web app infrastructure.",
+          "Resend — delivers the email notification when you submit the Contact form.",
+          "Upstash — short-lived rate-limiting counters keyed by IP address.",
+          "Google Play Store / Apple App Store — app distribution, subject to their own " +
+            "privacy terms for anything handled at the OS/store level.",
+        ],
+      },
+      {
+        heading: "No ads, no data sales",
+        body: [
+          "TuneTrend shows no advertising and includes no ad SDKs or ad trackers. We do not " +
+            "sell, rent, or trade your data to anyone, for any reason.",
+        ],
+      },
+      {
+        heading: "Data retention",
+        body: [
+          "Contact form messages are kept only as long as needed to respond to you. Analytics, " +
+            "crash, and performance data follow Firebase's and Vercel's own default retention " +
+            "periods. Rate-limiting counters expire automatically within minutes.",
+        ],
+      },
+      {
+        heading: "Children's privacy",
+        body: [
+          "TuneTrend is not directed at children under 13, and we do not knowingly collect " +
+            "personal information from children. If you believe a child has provided us " +
+            "information through the Contact form, please reach out and we'll remove it.",
+        ],
+      },
+      {
+        heading: "Your choices",
+        body: [
+          "You can disable push notifications at any time in your device's system settings. " +
+            "You can clear your saved theme/language preferences by clearing your browser's " +
+            "site data or the app's storage. Because there's no account system, there's no " +
+            "personal profile to delete — the only data we hold that identifies you at all is " +
+            "whatever you voluntarily typed into the Contact form, and you can ask us to delete " +
+            "it the same way: through that form.",
+        ],
+      },
+      {
+        heading: "Changes to this policy",
+        body: [
+          "If this policy changes, we'll update the date at the top of this page. Continued use " +
+            "of TuneTrend after a change means you accept the updated policy.",
+        ],
+      },
+      {
+        heading: "Contact us",
+        body: [
+          "Questions about this policy or your data? Use the Contact button on the About page " +
+            "— it reaches the developer directly.",
+        ],
+      },
+    ],
   },
   onboarding: {
     countryTitle: "Pick a country",

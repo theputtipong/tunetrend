@@ -50,3 +50,24 @@ func (r *categoryVideoRepository) GetNewVideos(countryCode string) ([]domain.Cat
 		Find(&videos).Error
 	return videos, err
 }
+
+// GetTopAcrossCountries ใช้ window function เลือก top-N ต่อประเทศในคำสั่งเดียว
+// (ไม่ต้อง query แยกทีละประเทศ) แล้วเรียงผลรวมทั้งหมดตามยอดวิว มากไปน้อย
+// r.tableName ผ่านการ validate เป็น regex + deny-list ตอน boot แล้ว (ดู
+// database.Connect) จึงปลอดภัยที่จะต่อ string ตรงๆ ในคำสั่ง SQL ดิบนี้
+func (r *categoryVideoRepository) GetTopAcrossCountries(countries []string, perCountryLimit int) ([]domain.CategoryVideo, error) {
+	var videos []domain.CategoryVideo
+	query := `
+		SELECT id, title, channel_title, thumbnail_url, view_count, country_code, published_at FROM (
+			SELECT *, ROW_NUMBER() OVER (
+				PARTITION BY country_code ORDER BY CAST(view_count AS BIGINT) DESC
+			) AS rn
+			FROM ` + r.tableName + `
+			WHERE country_code IN ?
+		) ranked
+		WHERE rn <= ?
+		ORDER BY CAST(view_count AS BIGINT) DESC
+	`
+	err := r.db.Raw(query, countries, perCountryLimit).Scan(&videos).Error
+	return videos, err
+}

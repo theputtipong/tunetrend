@@ -69,6 +69,9 @@ func main() {
 	)
 	categoryHandler := http.NewVideoCategoryHandler(categoryUsecase)
 
+	discoverUsecase := usecase.NewDiscoverUsecase(categoryRepos, categoryConfigs)
+	discoverHandler := http.NewDiscoverHandler(discoverUsecase)
+
 	go worker.StartYouTubeSync(songUsecase, workerLogRepo, workerSettings.MusicSyncIntervalMinutes, countries)
 	go worker.StartApiLogCleanup(apiLogRepo)
 	go worker.StartVideoCategorySync(categoryUsecase, workerLogRepo, workerSettings.CategorySyncIntervalMinutes, countries)
@@ -122,6 +125,7 @@ func main() {
 	app.Get("/trends/new", trendsRateLimit, songHandler.GetNewReleases)
 	app.Get("/trends/mv", trendsRateLimit, songHandler.GetMVs)
 	app.Get("/categories", trendsRateLimit, categoryHandler.GetCategories)
+	app.Get("/discover", trendsRateLimit, discoverHandler.GetDiscoverItems)
 
 	contactRateLimit := ratelimit.New(5, 10*time.Minute).FailClosed().Middleware()
 	app.Post("/contact", contactRateLimit, contactHandler.SubmitContact)

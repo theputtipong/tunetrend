@@ -21,6 +21,9 @@ type CategoryVideoRepository interface {
 	UpsertVideos(videos []CategoryVideo) error
 	GetVideos(countryCode string) ([]CategoryVideo, error)
 	GetNewVideos(countryCode string) ([]CategoryVideo, error)
+	// GetTopAcrossCountries คืนค่าวิดีโอ top-N ต่อประเทศ (ตาม perCountryLimit)
+	// รวมทุกประเทศใน countries เข้าด้วยกัน เรียงจากยอดวิวมากไปน้อย
+	GetTopAcrossCountries(countries []string, perCountryLimit int) ([]CategoryVideo, error)
 }
 
 type CategoryVideoUsecase interface {

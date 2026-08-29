@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { dictionaries, type Lang } from "@/lib/i18n";
-import { InfoIcon, MoreIcon } from "./icons";
+import { InfoIcon, MoreIcon, ShieldIcon } from "./icons";
 import { LanguageToggle } from "./LanguageToggle";
 import { ReplayTourButton } from "./ReplayTourButton";
 import { ThemeToggle } from "./ThemeToggle";
@@ -12,7 +12,13 @@ export function MobileMenu({
   lang,
   showAbout = true,
   showReplayTour = true,
-}: Readonly<{ lang: Lang; showAbout?: boolean; showReplayTour?: boolean }>) {
+  showPrivacy = true,
+}: Readonly<{
+  lang: Lang;
+  showAbout?: boolean;
+  showReplayTour?: boolean;
+  showPrivacy?: boolean;
+}>) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const t = dictionaries[lang].nav;
@@ -52,6 +58,12 @@ export function MobileMenu({
             <Link href="/about" onClick={close} className="menu-item">
               <InfoIcon size={16} />
               {t.about}
+            </Link>
+          )}
+          {showPrivacy && (
+            <Link href="/privacy" onClick={close} className="menu-item">
+              <ShieldIcon size={16} />
+              {t.privacy}
             </Link>
           )}
         </div>

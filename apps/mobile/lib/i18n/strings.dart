@@ -13,6 +13,30 @@ class AppStrings {
   final String tabTrending;
   final String tabNew;
   final String tabMv;
+  final String musicCategory;
+
+  final String autoPlayPromptTitle;
+  final String autoPlayPromptDescription;
+  final String autoPlayPromptAccept;
+  final String autoPlayPromptDecline;
+  final String Function(int secondsLeft) autoPlayPromptCountdown;
+  final String Function(int secondsLeft) autoAdvanceCountdown;
+  final String autoPlayStoppedMessage;
+
+  final String viewCountNoticeTooltip;
+  final String viewCountNoticeTitle;
+  final String viewCountNoticeBody;
+  final String viewCountNoticeDismiss;
+
+  final String maintenanceTitle;
+  final String maintenanceDescription;
+
+  final String updateRequiredTitle;
+  final String updateRequiredDescription;
+  final String updateNowButton;
+
+  final String shareTooltip;
+  final String Function(String title, String url, String? appUrl) shareMessage;
 
   final String errorTitle;
   final String errorDescription;
@@ -41,6 +65,8 @@ class AppStrings {
   final String onboardingCountryDescription;
   final String onboardingTabsTitle;
   final String onboardingTabsDescription;
+  final String onboardingCategoryTitle;
+  final String onboardingCategoryDescription;
   final String onboardingLanguageTitle;
   final String onboardingLanguageDescription;
   final String onboardingThemeTitle;
@@ -75,6 +101,7 @@ class AppStrings {
 
   final String supportDevelopment;
   final String replayTourTooltip;
+  final String privacyPolicy;
 
   const AppStrings({
     required this.aboutTooltip,
@@ -84,6 +111,25 @@ class AppStrings {
     required this.tabTrending,
     required this.tabNew,
     required this.tabMv,
+    required this.musicCategory,
+    required this.autoPlayPromptTitle,
+    required this.autoPlayPromptDescription,
+    required this.autoPlayPromptAccept,
+    required this.autoPlayPromptDecline,
+    required this.autoPlayPromptCountdown,
+    required this.autoAdvanceCountdown,
+    required this.autoPlayStoppedMessage,
+    required this.viewCountNoticeTooltip,
+    required this.viewCountNoticeTitle,
+    required this.viewCountNoticeBody,
+    required this.viewCountNoticeDismiss,
+    required this.maintenanceTitle,
+    required this.maintenanceDescription,
+    required this.updateRequiredTitle,
+    required this.updateRequiredDescription,
+    required this.updateNowButton,
+    required this.shareTooltip,
+    required this.shareMessage,
     required this.errorTitle,
     required this.errorDescription,
     required this.retry,
@@ -107,6 +153,8 @@ class AppStrings {
     required this.onboardingCountryDescription,
     required this.onboardingTabsTitle,
     required this.onboardingTabsDescription,
+    required this.onboardingCategoryTitle,
+    required this.onboardingCategoryDescription,
     required this.onboardingLanguageTitle,
     required this.onboardingLanguageDescription,
     required this.onboardingThemeTitle,
@@ -138,5 +186,6 @@ class AppStrings {
     required this.contactErrorGeneric,
     required this.supportDevelopment,
     required this.replayTourTooltip,
+    required this.privacyPolicy,
   });
 }

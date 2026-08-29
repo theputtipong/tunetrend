@@ -8,4 +8,5 @@ const Map<AppLang, AppStrings> dictionaries = {
   AppLang.th: thStrings,
 };
 
-AppStrings get currentStrings => dictionaries[LangController.instance.resolve()]!;
+AppStrings get currentStrings =>
+    dictionaries[LangController.instance.resolve()]!;

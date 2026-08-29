@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../constants/theme.dart';
 
 class LogoMark extends StatelessWidget {
@@ -17,8 +18,18 @@ class LogoMark extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           _bar(left: 6 * scale, height: 14 * scale, scale: scale, opacity: 0.5),
-          _bar(left: 15 * scale, height: 20 * scale, scale: scale, opacity: 0.68),
-          _bar(left: 24 * scale, height: 27 * scale, scale: scale, opacity: 0.84),
+          _bar(
+            left: 15 * scale,
+            height: 20 * scale,
+            scale: scale,
+            opacity: 0.68,
+          ),
+          _bar(
+            left: 24 * scale,
+            height: 27 * scale,
+            scale: scale,
+            opacity: 0.84,
+          ),
           _bar(left: 33 * scale, height: 34 * scale, scale: scale, opacity: 1),
           Positioned(
             left: 29 * scale,

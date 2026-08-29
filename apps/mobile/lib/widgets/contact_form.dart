@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import '../constants/theme.dart';
 import '../constants/validation.dart';
 import '../i18n/dictionary.dart';
@@ -72,8 +73,12 @@ class _ContactFormState extends State<ContactForm> {
       await _api.submitContact(
         name: _nameController.text.trim(),
         message: _messageController.text.trim(),
-        contactEmail: _method == _ContactMethod.email ? _contactController.text.trim() : null,
-        contactPhone: _method == _ContactMethod.phone ? _contactController.text.trim() : null,
+        contactEmail: _method == _ContactMethod.email
+            ? _contactController.text.trim()
+            : null,
+        contactPhone: _method == _ContactMethod.phone
+            ? _contactController.text.trim()
+            : null,
       );
       setState(() {
         _successMessage = t.contactSuccessMessage;
@@ -84,7 +89,9 @@ class _ContactFormState extends State<ContactForm> {
       _startCloseCountdown();
     } on ApiException catch (e) {
       setState(() {
-        _errorMessage = e.statusCode == 429 ? t.contactErrorRateLimited : t.contactErrorGeneric;
+        _errorMessage = e.statusCode == 429
+            ? t.contactErrorRateLimited
+            : t.contactErrorGeneric;
       });
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -102,14 +109,21 @@ class _ContactFormState extends State<ContactForm> {
           Container(
             width: 56,
             height: 56,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.accent),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.accent,
+            ),
             child: Icon(Icons.check, color: AppColors.accentInk, size: 28),
           ),
           const SizedBox(height: 12),
           Text(
             _successMessage!,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 15),
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -125,14 +139,20 @@ class _ContactFormState extends State<ContactForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(t.contactNameLabel, style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+          Text(
+            t.contactNameLabel,
+            style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _nameController,
             decoration: InputDecoration(hintText: t.contactNamePlaceholder),
           ),
           const SizedBox(height: 14),
-          Text(t.contactMessageLabel, style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+          Text(
+            t.contactMessageLabel,
+            style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _messageController,
@@ -146,12 +166,21 @@ class _ContactFormState extends State<ContactForm> {
             },
           ),
           const SizedBox(height: 14),
-          Text(t.contactMethodLabel, style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+          Text(
+            t.contactMethodLabel,
+            style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 6),
           SegmentedButton<_ContactMethod>(
             segments: [
-              ButtonSegment(value: _ContactMethod.email, label: Text(t.contactMethodEmail)),
-              ButtonSegment(value: _ContactMethod.phone, label: Text(t.contactMethodPhone)),
+              ButtonSegment(
+                value: _ContactMethod.email,
+                label: Text(t.contactMethodEmail),
+              ),
+              ButtonSegment(
+                value: _ContactMethod.phone,
+                label: Text(t.contactMethodPhone),
+              ),
             ],
             selected: {_method},
             onSelectionChanged: (selection) {
@@ -189,16 +218,27 @@ class _ContactFormState extends State<ContactForm> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.accent,
               foregroundColor: AppColors.accentInk,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
             child: _submitting
                 ? SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentInk),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.accentInk,
+                    ),
                   )
-                : Text(t.contactSubmit, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                : Text(
+                    t.contactSubmit,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
           ),
           if (_errorMessage != null) ...[
             const SizedBox(height: 12),
@@ -208,7 +248,10 @@ class _ContactFormState extends State<ContactForm> {
                 color: AppColors.errorBg,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(_errorMessage!, style: TextStyle(color: AppColors.errorText, fontSize: 13)),
+              child: Text(
+                _errorMessage!,
+                style: TextStyle(color: AppColors.errorText, fontSize: 13),
+              ),
             ),
           ],
         ],

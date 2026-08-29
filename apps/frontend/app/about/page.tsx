@@ -76,8 +76,13 @@ export default async function AboutPage() {
         </div>
       </div>
 
-      <footer className="mt-14 flex flex-col items-start gap-2 border-t border-[var(--border)] py-6 pb-24 sm:hidden">
-        <BuyMeCoffeeButton label={dictionaries[lang].nav.buyCoffee} size={26} showLabel />
+      <footer className="mt-14 flex flex-col items-start gap-3 border-t border-[var(--border)] py-6 pb-24">
+        <div className="sm:hidden">
+          <BuyMeCoffeeButton label={dictionaries[lang].nav.buyCoffee} size={26} showLabel />
+        </div>
+        <Link href="/privacy" className="text-sm text-[var(--text-3)] underline">
+          {dictionaries[lang].nav.privacy}
+        </Link>
       </footer>
 
       <ContactFab lang={lang} />

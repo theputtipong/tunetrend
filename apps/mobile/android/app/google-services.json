@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "679545454783",
+    "project_id": "tunetrend-pdouvch",
+    "storage_bucket": "tunetrend-pdouvch.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:679545454783:android:5e75ecb835329217c8460a",
+        "android_client_info": {
+          "package_name": "com.tunetrend.tunetrend_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7WHS2m4VlAQoEJ319krrxhRrw3jTjACc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

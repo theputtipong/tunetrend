@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:tunetrend_mobile/main.dart';
+import 'package:tunetrend_mobile/screens/tune_trend_app.dart';
 
 void main() {
   testWidgets('renders the TuneTrend header and tabs', (WidgetTester tester) async {

@@ -54,6 +54,7 @@ dependencies:
   package_info_plus: ^10.2.1
   firebase_messaging: ^16.6.0
   flutter_local_notifications: ^22.3.0
+  lottie: ^3.5.1
 
 dev_dependencies:
   flutter_test:
@@ -99,6 +100,7 @@ flutter:
 
   assets:
     - assets/icon/
+    - assets/lottie/
     - shorebird.yaml
 
   # An image asset can refer to one or more resolution-specific "variants", see

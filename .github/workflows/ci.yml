@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -60,3 +61,39 @@ jobs:
           flags: backend
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
+  mobile-release:
+    name: Mobile Release Build (Android)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+      - run: flutter pub get
+      # --obfuscate strips readable Dart symbol names from the release build
+      # (harder to reverse-engineer from the shipped APK); --split-debug-info
+      # writes the symbol map that step maps obfuscated names back — needed
+      # to make sense of a Crashlytics stack trace from a release build via
+      # `flutter symbolize`, so it's archived as a build artifact below.
+      - run: |
+          flutter build apk --release \
+            --obfuscate \
+            --split-debug-info=build/symbols
+      - name: Upload Dart debug symbols (for flutter symbolize)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dart-debug-symbols-${{ github.sha }}
+          path: apps/mobile/build/symbols
+          retention-days: 90
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk-${{ github.sha }}
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 90

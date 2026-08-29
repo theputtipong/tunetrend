@@ -2,6 +2,7 @@ import type { CountryCode } from "./countries";
 import type { TabKey } from "./tabs";
 import type { Song, TrendsResponse } from "@/types/song";
 import type { Category, CategoriesResponse } from "@/types/category";
+import type { DiscoverItem, DiscoverResponse } from "@/types/discover";
 
 const API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:8080";
 
@@ -34,6 +35,22 @@ export async function fetchSongs(
   }
 
   const body: TrendsResponse = await res.json();
+  if (!body.success) {
+    throw new Error(body.error ?? "TuneTrend API returned an error");
+  }
+
+  return body.data ?? [];
+}
+
+export async function fetchDiscoverItems(): Promise<DiscoverItem[]> {
+  const url = `${API_BASE_URL}/discover`;
+
+  const res = await fetch(url, { next: { revalidate: REVALIDATE_SECONDS } });
+  if (!res.ok) {
+    throw new Error(`TuneTrend API responded with status ${res.status}`);
+  }
+
+  const body: DiscoverResponse = await res.json();
   if (!body.success) {
     throw new Error(body.error ?? "TuneTrend API returned an error");
   }

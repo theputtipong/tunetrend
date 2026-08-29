@@ -1,13 +1,55 @@
+import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:showcaseview/showcaseview.dart';
+
 import 'constants/countries.dart';
 import 'constants/onboarding.dart';
 import 'constants/theme.dart';
+import 'firebase_options.dart';
 import 'i18n/lang.dart';
+import 'screens/force_update_app.dart';
+import 'screens/maintenance_app.dart';
 import 'screens/trends_screen.dart';
+import 'services/analytics_service.dart';
+import 'services/messaging_service.dart';
+import 'services/remote_config_service.dart';
+import 'utils/version.dart';
 
-void main() {
-  runApp(const TuneTrendApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Route uncaught framework and platform/async errors to Crashlytics.
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  unawaited(MessagingService.initialize());
+
+  await RemoteConfigController.instance.load();
+
+  final snapshot = RemoteConfigController.instance.value;
+  final packageInfo = await PackageInfo.fromPlatform();
+  final updateRequired =
+      !snapshot.isMaintenance &&
+      isVersionLower(packageInfo.version, snapshot.minAppVersion);
+
+  runApp(
+    snapshot.isMaintenance
+        ? const MaintenanceApp()
+        : updateRequired
+        ? const ForceUpdateApp()
+        : const TuneTrendApp(),
+  );
 }
 
 class TuneTrendApp extends StatefulWidget {
@@ -17,7 +59,8 @@ class TuneTrendApp extends StatefulWidget {
   State<TuneTrendApp> createState() => _TuneTrendAppState();
 }
 
-class _TuneTrendAppState extends State<TuneTrendApp> with WidgetsBindingObserver {
+class _TuneTrendAppState extends State<TuneTrendApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -49,7 +92,8 @@ class _TuneTrendAppState extends State<TuneTrendApp> with WidgetsBindingObserver
 
   @override
   Widget build(BuildContext context) {
-    final brightness = ThemeController.instance.value ??
+    final brightness =
+        ThemeController.instance.value ??
         WidgetsBinding.instance.platformDispatcher.platformBrightness;
     AppColors.applyBrightness(brightness);
 
@@ -60,6 +104,7 @@ class _TuneTrendAppState extends State<TuneTrendApp> with WidgetsBindingObserver
       title: 'TuneTrend',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(brightness),
+      navigatorObservers: [AnalyticsService().observer],
       builder: (context, child) => ShowCaseWidget(builder: (context) => child!),
       home: TrendsScreen(initialCountry: initialCountry),
     );

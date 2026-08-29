@@ -9,4 +9,5 @@ String normalizeThaiPhone(String raw) => raw.replaceAll(RegExp(r'[\s()-]'), '');
 
 bool isValidEmail(String v) => emailPattern.hasMatch(v.trim());
 
-bool isValidThaiPhone(String v) => thaiPhonePattern.hasMatch(normalizeThaiPhone(v));
+bool isValidThaiPhone(String v) =>
+    thaiPhonePattern.hasMatch(normalizeThaiPhone(v));

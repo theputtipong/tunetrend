@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
+
 import '../constants/countries.dart';
 import '../constants/onboarding.dart';
 import '../constants/tabs.dart';
 import '../constants/theme.dart';
 import '../i18n/dictionary.dart';
 import '../i18n/lang.dart';
+import '../models/category.dart';
 import '../models/song.dart';
 import 'about_screen.dart';
+import '../services/analytics_service.dart';
 import '../services/api_client.dart';
+import '../widgets/category_filter.dart';
 import '../widgets/country_selector.dart';
 import '../widgets/logo_mark.dart';
+import '../widgets/song_list_skeleton.dart';
 import '../widgets/song_tile.dart';
 import '../widgets/state_message.dart';
 import '../widgets/trend_tabs.dart';
@@ -30,25 +35,48 @@ class _TrendsScreenState extends State<TrendsScreen> {
   final _api = ApiClient();
 
   final _keyCountry = GlobalKey();
+  final _keyCategory = GlobalKey();
   final _keyTabs = GlobalKey();
   final _keyMenu = GlobalKey();
 
+  List<GlobalKey> get _tourKeys => [
+    _keyCountry,
+    if (_categories.isNotEmpty) _keyCategory,
+    _keyTabs,
+    _keyMenu,
+  ];
+
   late String _country = widget.initialCountry;
   TrendTab _tab = TrendTab.trending;
+  String _category = '';
+  List<Category> _categories = const [];
   late Future<List<Song>> _songsFuture = _load();
 
   Future<List<Song>> _load() {
-    return _api.fetchSongs(_country, _tab);
+    final categoryId = _tab == TrendTab.musicVideos ? '' : _category;
+    return _api.fetchSongs(_country, _tab, categoryId: categoryId);
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await _api.fetchCategories(_country);
+      if (mounted) setState(() => _categories = categories);
+    } catch (_) {
+      // Category filter is a bonus affordance — fall back to no filter on failure.
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!OnboardingController.instance.value && mounted) {
-        ShowCaseWidget.of(context).startShowCase([_keyCountry, _keyTabs, _keyMenu]);
-        OnboardingController.instance.markSeen();
-      }
+    _loadCategories().then((_) {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!OnboardingController.instance.value && mounted) {
+          ShowCaseWidget.of(context).startShowCase(_tourKeys);
+          OnboardingController.instance.markSeen();
+        }
+      });
     });
   }
 
@@ -62,8 +90,12 @@ class _TrendsScreenState extends State<TrendsScreen> {
     if (code == _country) return;
     setState(() {
       _country = code;
+      _category = '';
+      _categories = const [];
       _songsFuture = _load();
     });
+    _loadCategories();
+    AnalyticsService().logCountryChanged(code);
   }
 
   void _selectTab(TrendTab tab) {
@@ -72,6 +104,18 @@ class _TrendsScreenState extends State<TrendsScreen> {
       _tab = tab;
       _songsFuture = _load();
     });
+  }
+
+  void _selectCategory(String categoryId) {
+    if (categoryId == _category) return;
+    setState(() {
+      _category = categoryId;
+      if (categoryId.isNotEmpty && _tab == TrendTab.musicVideos) {
+        _tab = TrendTab.trending;
+      }
+      _songsFuture = _load();
+    });
+    AnalyticsService().logCategorySelected(categoryId);
   }
 
   @override
@@ -95,20 +139,24 @@ class _TrendsScreenState extends State<TrendsScreen> {
                     description: t.onboardingMenuDescription,
                     child: PopupMenuButton<_MenuAction>(
                       tooltip: t.menuTooltip,
-                      icon: Icon(Icons.more_vert, color: AppColors.textSecondary, size: 20),
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
                       onSelected: (action) {
                         switch (action) {
                           case _MenuAction.replayTour:
-                            ShowCaseWidget.of(context).startShowCase(
-                              [_keyCountry, _keyTabs, _keyMenu],
-                            );
+                            ShowCaseWidget.of(context).startShowCase(_tourKeys);
                           case _MenuAction.language:
                             LangController.instance.toggle();
                           case _MenuAction.theme:
                             ThemeController.instance.toggle(context);
                           case _MenuAction.about:
                             Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const AboutScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const AboutScreen(),
+                              ),
                             );
                         }
                       },
@@ -123,7 +171,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
                             ),
                             title: Text(
                               t.replayTourTooltip,
-                              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 14,
+                              ),
                             ),
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -140,7 +191,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
                               LangController.instance.resolve() == AppLang.en
                                   ? 'ภาษาไทย'
                                   : 'English',
-                              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 14,
+                              ),
                             ),
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -149,7 +203,8 @@ class _TrendsScreenState extends State<TrendsScreen> {
                           value: _MenuAction.theme,
                           child: ListTile(
                             leading: Icon(
-                              ThemeController.instance.resolve(context) == Brightness.dark
+                              ThemeController.instance.resolve(context) ==
+                                      Brightness.dark
                                   ? Icons.light_mode_outlined
                                   : Icons.dark_mode_outlined,
                               size: 20,
@@ -157,7 +212,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
                             ),
                             title: Text(
                               t.themeToggleTooltip,
-                              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 14,
+                              ),
                             ),
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -172,7 +230,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
                             ),
                             title: Text(
                               t.aboutTooltip,
-                              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 14,
+                              ),
                             ),
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -189,7 +250,25 @@ class _TrendsScreenState extends State<TrendsScreen> {
                 key: _keyCountry,
                 title: t.onboardingCountryTitle,
                 description: t.onboardingCountryDescription,
-                child: CountrySelector(activeCountry: _country, onSelect: _selectCountry),
+                child: CountrySelector(
+                  activeCountry: _country,
+                  onSelect: _selectCountry,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Showcase(
+                key: _keyCategory,
+                title: t.onboardingCategoryTitle,
+                description: t.onboardingCategoryDescription,
+                child: CategoryFilter(
+                  active: _category,
+                  categories: _categories,
+                  musicLabel: t.musicCategory,
+                  onSelect: _selectCategory,
+                ),
               ),
             ),
             const SizedBox(height: 14),
@@ -199,7 +278,11 @@ class _TrendsScreenState extends State<TrendsScreen> {
                 key: _keyTabs,
                 title: t.onboardingTabsTitle,
                 description: t.onboardingTabsDescription,
-                child: TrendTabs(active: _tab, onSelect: _selectTab),
+                child: TrendTabs(
+                  active: _tab,
+                  showMusicVideos: _category.isEmpty,
+                  onSelect: _selectTab,
+                ),
               ),
             ),
             Divider(height: 1, color: AppColors.border),
@@ -212,9 +295,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                   future: _songsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState != ConnectionState.done) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: AppColors.accent),
-                      );
+                      return const SongListSkeleton();
                     }
 
                     if (snapshot.hasError) {
@@ -239,7 +320,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
                             variant: StateMessageVariant.empty,
                             title: t.emptyTitle,
                             description: t.emptyDescription(
-                              countryLabel(_country, LangController.instance.resolve()),
+                              countryLabel(
+                                _country,
+                                LangController.instance.resolve(),
+                              ),
                             ),
                           ),
                         ],
@@ -250,7 +334,11 @@ class _TrendsScreenState extends State<TrendsScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: songs.length,
                       itemBuilder: (context, index) {
-                        return SongTile(song: songs[index], rank: index + 1);
+                        return SongTile(
+                          song: songs[index],
+                          rank: index + 1,
+                          tab: _tab,
+                        );
                       },
                     );
                   },

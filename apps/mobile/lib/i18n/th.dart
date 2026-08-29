@@ -9,6 +9,13 @@ String _emptyDescription(String countryName) =>
     'ยังไม่มีข้อมูลชาร์ตของ$countryNameในหมวดนี้ ข้อมูลใหม่จะซิงค์ทุก 3 ชั่วโมง — กลับมาเช็คอีกครั้งเร็ว ๆ นี้';
 
 String _closingIn(int n) => 'ปิดในอีก $n วินาที…';
+String _autoPlayPromptCountdown(int n) =>
+    'จะเล่นต่อเนื่องอัตโนมัติในอีก $n วินาที…';
+String _autoAdvanceCountdown(int n) => 'เล่นเพลงถัดไปในอีก $n วินาที…';
+String _shareMessage(String title, String url, String? appUrl) {
+  final base = '$title\n$url\n\nแชร์จากแอป TuneTrend';
+  return appUrl == null ? base : '$base\nดาวน์โหลดแอป: $appUrl';
+}
 
 const thStrings = AppStrings(
   aboutTooltip: 'เกี่ยวกับ TuneTrend',
@@ -18,6 +25,32 @@ const thStrings = AppStrings(
   tabTrending: 'กำลังฮิต',
   tabNew: 'เพลงใหม่',
   tabMv: 'มิวสิควิดีโอ',
+  musicCategory: 'เพลง',
+  autoPlayPromptTitle: 'เล่นต่อเนื่องเลยไหม?',
+  autoPlayPromptDescription:
+      'เล่นวิดีโอถัดไปในลำดับนี้ให้อัตโนมัติทุกครั้งที่วิดีโอจบ',
+  autoPlayPromptAccept: 'เล่นต่อเนื่อง',
+  autoPlayPromptDecline: 'ไม่ ขอบคุณ',
+  autoPlayPromptCountdown: _autoPlayPromptCountdown,
+  autoAdvanceCountdown: _autoAdvanceCountdown,
+  autoPlayStoppedMessage: 'หยุดเล่นต่อเนื่องแล้ว เนื่องจากเปลี่ยนแท็บ',
+  viewCountNoticeTooltip: 'เกี่ยวกับยอดวิว',
+  viewCountNoticeTitle: 'เกี่ยวกับยอดวิว',
+  viewCountNoticeBody:
+      'วิดีโอนี้เล่นผ่านตัวเล่นวิดีโอ (embedded player) อย่างเป็นทางการของ YouTube '
+      'ยอดวิว เวลาในการรับชม และรายได้จากโฆษณาของผู้สร้างคอนเทนต์ จะถูกนับตามปกติ '
+      'เหมือนรับชมบน youtube.com ทุกประการ TuneTrend เป็นเพียงช่องทางรวบรวมข้อมูลเทรนด์สาธารณะ '
+      'ผ่าน YouTube Data API เท่านั้น ไม่มีการดาวน์โหลด นำไปเผยแพร่ซ้ำ '
+      'หรือแทรกแซงคอนเทนต์ของท่านแต่อย่างใด',
+  viewCountNoticeDismiss: 'เข้าใจแล้ว',
+  maintenanceTitle: 'TuneTrend กำลังปิดปรับปรุงระบบ',
+  maintenanceDescription: 'เรากำลังปรับปรุงระบบเพื่อประสบการณ์ที่ดีขึ้น จะกลับมาให้บริการเร็วๆ นี้ ขอบคุณที่รอครับ',
+  updateRequiredTitle: 'ต้องอัปเดตแอป',
+  updateRequiredDescription:
+      'TuneTrend เวอร์ชันใหม่พร้อมใช้งานแล้ว กรุณาอัปเดตเพื่อใช้งานแอปต่อ',
+  updateNowButton: 'อัปเดตเลย',
+  shareTooltip: 'แชร์',
+  shareMessage: _shareMessage,
   errorTitle: 'โหลดเพลงกำลังฮิตไม่สำเร็จ',
   errorDescription: 'เราไม่สามารถเชื่อมต่อกับ TuneTrend service ได้ ตรวจสอบการเชื่อมต่อแล้วลองใหม่อีกครั้ง',
   retry: 'ลองใหม่',
@@ -59,12 +92,16 @@ const thStrings = AppStrings(
   ],
   onboardingCountryTitle: 'เลือกประเทศ',
   onboardingCountryDescription: 'สลับดูชาร์ตของ TH, KR, JP, US, GB ได้ที่นี่',
-  onboardingTabsTitle: 'เลือกหมวดหมู่',
-  onboardingTabsDescription: 'สลับดูกำลังฮิต เพลงใหม่ หรือมิวสิควิดีโอได้ที่นี่',
+  onboardingTabsTitle: 'สลับมุมมอง',
+  onboardingTabsDescription:
+      'สลับดูกำลังฮิต เพลงใหม่ หรือมิวสิควิดีโอได้ที่นี่',
+  onboardingCategoryTitle: 'กรองตามหมวดหมู่',
+  onboardingCategoryDescription: 'เลือกดูเฉพาะหมวดหมู่ YouTube ที่สนใจ เช่น เกม หรือกีฬา ปัดซ้าย-ขวาเพื่อดูหมวดหมู่เพิ่มเติมได้',
   onboardingLanguageTitle: 'ภาษา',
   onboardingLanguageDescription: 'สลับภาษาทั้งแอประหว่างไทยกับอังกฤษ',
   onboardingThemeTitle: 'ธีมสว่าง/มืด',
-  onboardingThemeDescription: 'สลับธีมได้ตามใจ — ปกติ TuneTrend จะตามธีมของระบบเครื่องคุณอยู่แล้ว',
+  onboardingThemeDescription:
+      'สลับธีมได้ตามใจ — ปกติ TuneTrend จะตามธีมของระบบเครื่องคุณอยู่แล้ว',
   onboardingAboutTitle: 'เกี่ยวกับ TuneTrend',
   onboardingAboutDescription: 'ดูเบื้องหลังการพัฒนาแอปนี้ และช่องทางติดต่อ',
   onboardingMenuTitle: 'ตัวเลือกเพิ่มเติม',
@@ -92,4 +129,5 @@ const thStrings = AppStrings(
   contactErrorGeneric: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้งภายหลัง',
   supportDevelopment: 'สนับสนุนการพัฒนาแอปนี้',
   replayTourTooltip: 'ดูแนะนำการใช้งานระบบอีกครั้ง',
+  privacyPolicy: 'นโยบายความเป็นส่วนตัว',
 );

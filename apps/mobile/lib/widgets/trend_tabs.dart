@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../constants/tabs.dart';
 import '../constants/theme.dart';
 import '../i18n/dictionary.dart';
@@ -6,9 +7,15 @@ import '../i18n/strings.dart';
 
 class TrendTabs extends StatelessWidget {
   final TrendTab active;
+  final bool showMusicVideos;
   final ValueChanged<TrendTab> onSelect;
 
-  const TrendTabs({super.key, required this.active, required this.onSelect});
+  const TrendTabs({
+    super.key,
+    required this.active,
+    required this.onSelect,
+    this.showMusicVideos = true,
+  });
 
   String _labelFor(TrendTab tab, AppStrings t) {
     switch (tab) {
@@ -24,8 +31,11 @@ class TrendTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = currentStrings;
+    final visibleTabs = showMusicVideos
+        ? TrendTab.values
+        : TrendTab.values.where((tab) => tab != TrendTab.musicVideos);
     return Row(
-      children: TrendTab.values.map((tab) {
+      children: visibleTabs.map((tab) {
         final isActive = tab == active;
         return Padding(
           padding: const EdgeInsets.only(right: 22),
@@ -46,7 +56,9 @@ class TrendTabs extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13.5,
-                  color: isActive ? AppColors.textPrimary : AppColors.textTertiary,
+                  color: isActive
+                      ? AppColors.textPrimary
+                      : AppColors.textTertiary,
                 ),
               ),
             ),

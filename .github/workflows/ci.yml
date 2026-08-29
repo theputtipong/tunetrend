@@ -76,6 +76,21 @@ jobs:
           channel: stable
           flutter-version: 3.47.2
       - run: flutter pub get
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=$KEYSTORE_PATH
+          EOF
       # --obfuscate strips readable Dart symbol names from the release build
       # (harder to reverse-engineer from the shipped APK); --split-debug-info
       # writes the symbol map that step maps obfuscated names back — needed
@@ -84,7 +99,8 @@ jobs:
       - run: |
           flutter build apk --release \
             --obfuscate \
-            --split-debug-info=build/symbols
+            --split-debug-info=build/symbols \
+            --dart-define=API_BASE_URL=https://tunetrend-api.onrender.com
       - name: Upload Dart debug symbols (for flutter symbolize)
         uses: actions/upload-artifact@v4
         with:

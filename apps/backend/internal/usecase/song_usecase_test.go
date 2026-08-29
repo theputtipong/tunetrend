@@ -72,6 +72,11 @@ func (m *MockCategoryVideoRepository) GetNewVideos(countryCode string) ([]domain
 	return args.Get(0).([]domain.CategoryVideo), args.Error(1)
 }
 
+func (m *MockCategoryVideoRepository) GetTopAcrossCountries(countries []string, perCountryLimit int) ([]domain.CategoryVideo, error) {
+	args := m.Called(countries, perCountryLimit)
+	return args.Get(0).([]domain.CategoryVideo), args.Error(1)
+}
+
 func TestGetTrends_Success(t *testing.T) {
 	mockDB := new(MockSongRepository)
 	mockYT := new(MockYouTubeRepository)

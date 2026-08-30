@@ -96,6 +96,13 @@ jobs:
       # writes the symbol map that step maps obfuscated names back — needed
       # to make sense of a Crashlytics stack trace from a release build via
       # `flutter symbolize`, so it's archived as a build artifact below.
+      # Play Console requires the .aab (App Bundle) for the actual upload;
+      # the .apk is built alongside it only for manual/sideload testing.
+      - run: |
+          flutter build appbundle --release \
+            --obfuscate \
+            --split-debug-info=build/symbols \
+            --dart-define=API_BASE_URL=https://tunetrend-api.onrender.com
       - run: |
           flutter build apk --release \
             --obfuscate \
@@ -107,7 +114,13 @@ jobs:
           name: dart-debug-symbols-${{ github.sha }}
           path: apps/mobile/build/symbols
           retention-days: 90
-      - name: Upload release APK
+      - name: Upload release AAB (for Play Console upload)
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab-${{ github.sha }}
+          path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 90
+      - name: Upload release APK (for manual/sideload testing)
         uses: actions/upload-artifact@v4
         with:
           name: release-apk-${{ github.sha }}

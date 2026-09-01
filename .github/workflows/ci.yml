@@ -109,19 +109,19 @@ jobs:
             --split-debug-info=build/symbols \
             --dart-define=API_BASE_URL=https://tunetrend-api.onrender.com
       - name: Upload Dart debug symbols (for flutter symbolize)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dart-debug-symbols-${{ github.sha }}
           path: apps/mobile/build/symbols
           retention-days: 90
       - name: Upload release AAB (for Play Console upload)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-aab-${{ github.sha }}
           path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
           retention-days: 90
       - name: Upload release APK (for manual/sideload testing)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-apk-${{ github.sha }}
           path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk

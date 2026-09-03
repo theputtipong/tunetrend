@@ -72,7 +72,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late Future<List<Song>> _relatedFuture = _loadRelated();
 
   Future<List<Song>> _loadRelated() async {
-    final songs = await _api.fetchSongs(widget.country, _relatedTab);
+    final categoryId = _relatedTab == TrendTab.musicVideos ? '' : _categoryId;
+    final songs = await _api.fetchSongs(
+      widget.country,
+      _relatedTab,
+      categoryId: categoryId,
+    );
     _relatedSongs = songs;
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToNowPlaying());
     return songs;

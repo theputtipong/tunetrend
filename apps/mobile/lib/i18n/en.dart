@@ -23,6 +23,7 @@ const enStrings = AppStrings(
   backToTrends: '← Back to trends',
   tabTrending: 'Trending',
   tabNew: 'New Releases',
+  tabNewGeneric: 'New Videos',
   tabMv: 'Music Videos',
   musicCategory: 'Music',
   autoPlayPromptTitle: 'Keep playing?',

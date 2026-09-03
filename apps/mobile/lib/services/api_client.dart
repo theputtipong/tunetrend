@@ -9,7 +9,7 @@ import 'performance_service.dart';
 
 const String _apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://localhost:8080',
+  defaultValue: 'http://10.0.2.2:8080',
 );
 
 class ApiException implements Exception {

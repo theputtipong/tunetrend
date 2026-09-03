@@ -22,7 +22,7 @@ class TrendTabs extends StatelessWidget {
       case TrendTab.trending:
         return t.tabTrending;
       case TrendTab.newReleases:
-        return t.tabNew;
+        return showMusicVideos ? t.tabNew : t.tabNewGeneric;
       case TrendTab.musicVideos:
         return t.tabMv;
     }

@@ -12,6 +12,7 @@ class AppStrings {
 
   final String tabTrending;
   final String tabNew;
+  final String tabNewGeneric;
   final String tabMv;
   final String musicCategory;
 
@@ -110,6 +111,7 @@ class AppStrings {
     required this.backToTrends,
     required this.tabTrending,
     required this.tabNew,
+    required this.tabNewGeneric,
     required this.tabMv,
     required this.musicCategory,
     required this.autoPlayPromptTitle,

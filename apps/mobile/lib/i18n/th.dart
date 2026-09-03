@@ -24,6 +24,7 @@ const thStrings = AppStrings(
   backToTrends: '← กลับไปหน้าชาร์ต',
   tabTrending: 'กำลังฮิต',
   tabNew: 'เพลงใหม่',
+  tabNewGeneric: 'วิดีโอใหม่',
   tabMv: 'มิวสิควิดีโอ',
   musicCategory: 'เพลง',
   autoPlayPromptTitle: 'เล่นต่อเนื่องเลยไหม?',

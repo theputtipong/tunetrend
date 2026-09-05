@@ -20,6 +20,20 @@ import '../widgets/trend_tabs.dart';
 const _autoPlayDelay = Duration(seconds: 5);
 const _autoPlayPromptCountdownSeconds = 5;
 
+// youtube_player_iframe's autoFullScreen just checks width > height with no
+// device-size awareness, so a tablet rotated to landscape (but not expanded)
+// would otherwise auto-enter fullscreen. Above this breakpoint we disable
+// that auto-trigger and rely on the player's own fullscreen button instead.
+const _tabletShortestSideBreakpoint = 600.0;
+
+// Sizing the video by full width alone (height = width * 9/16) can demand
+// more height than the screen has in wide-landscape layouts (e.g. a 16:10
+// tablet rotated sideways) — previously masked because autoFullScreen took
+// over the display before the Column had to lay out. These reserve the
+// fixed-height siblings so the video can be height-capped to what's left.
+const _headerRowHeight = kMinInteractiveDimension;
+const _autoAdvanceBannerHeight = 56.0;
+
 class VideoPlayerScreen extends StatefulWidget {
   final String videoId;
   final String title;
@@ -254,6 +268,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Widget build(BuildContext context) {
     final t = currentStrings;
     final lang = LangController.instance.resolve();
+    final isTablet =
+        MediaQuery.sizeOf(context).shortestSide >=
+        _tabletShortestSideBreakpoint;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -269,162 +286,183 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         ),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Row(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final reservedHeight =
+                _headerRowHeight +
+                (_autoAdvanceSecondsLeft != null
+                    ? _autoAdvanceBannerHeight
+                    : 0);
+            final maxVideoHeight = (constraints.maxHeight - reservedHeight)
+                .clamp(0.0, double.infinity);
+
+            return Column(
               children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    _title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14.5,
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
-                  ),
-                ),
-                IconButton(
-                  key: _shareButtonKey,
-                  onPressed: _shareSong,
-                  tooltip: t.shareTooltip,
-                  icon: const Icon(Icons.share, color: Colors.white, size: 20),
-                ),
-              ],
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: YoutubePlayer(controller: _controller),
-              ),
-            ),
-            if (_autoAdvanceSecondsLeft != null)
-              Container(
-                width: double.infinity,
-                color: Colors.black,
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2A2D37),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.skip_next,
-                          color: AppColors.accent,
-                          size: 16,
+                    Expanded(
+                      child: Text(
+                        _title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14.5,
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          t.autoAdvanceCountdown(_autoAdvanceSecondsLeft!),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12.5,
+                      ),
+                    ),
+                    IconButton(
+                      key: _shareButtonKey,
+                      onPressed: _shareSong,
+                      tooltip: t.shareTooltip,
+                      icon: const Icon(
+                        Icons.share,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxVideoHeight),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: YoutubePlayer(
+                      controller: _controller,
+                      autoFullScreen: !isTablet,
+                    ),
+                  ),
+                ),
+                if (_autoAdvanceSecondsLeft != null)
+                  Container(
+                    width: double.infinity,
+                    color: Colors.black,
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2A2D37),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.skip_next,
+                              color: AppColors.accent,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              t.autoAdvanceCountdown(_autoAdvanceSecondsLeft!),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    color: AppColors.background,
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                          child: TrendTabs(
+                            active: _relatedTab,
+                            showMusicVideos: _showMv,
+                            onSelect: _selectRelatedTab,
+                          ),
+                        ),
+                        Divider(height: 1, color: AppColors.border),
+                        Expanded(
+                          child: FutureBuilder<List<Song>>(
+                            future: _relatedFuture,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState !=
+                                  ConnectionState.done) {
+                                return const SongListSkeleton();
+                              }
+
+                              if (snapshot.hasError) {
+                                return ListView(
+                                  children: [
+                                    StateMessage(
+                                      variant: StateMessageVariant.error,
+                                      title: t.errorTitle,
+                                      description: t.errorDescription,
+                                      retryLabel: t.retry,
+                                      onRetry: () => setState(
+                                        () => _relatedFuture = _loadRelated(),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              final songs = snapshot.data ?? const [];
+
+                              if (songs.isEmpty) {
+                                return ListView(
+                                  children: [
+                                    StateMessage(
+                                      variant: StateMessageVariant.empty,
+                                      title: t.emptyTitle,
+                                      description: t.emptyDescription(
+                                        countryLabel(widget.country, lang),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              return ListView.builder(
+                                controller: _scrollController,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                itemCount: songs.length,
+                                itemBuilder: (context, index) {
+                                  final song = songs[index];
+                                  final isPlaying = song.id == _videoId;
+                                  return SongTile(
+                                    key: isPlaying ? _nowPlayingKey : null,
+                                    song: song,
+                                    rank: index + 1,
+                                    tab: _relatedTab,
+                                    isPlaying: isPlaying,
+                                  );
+                                },
+                              );
+                            },
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                color: AppColors.background,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                      child: TrendTabs(
-                        active: _relatedTab,
-                        showMusicVideos: _showMv,
-                        onSelect: _selectRelatedTab,
-                      ),
-                    ),
-                    Divider(height: 1, color: AppColors.border),
-                    Expanded(
-                      child: FutureBuilder<List<Song>>(
-                        future: _relatedFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState !=
-                              ConnectionState.done) {
-                            return const SongListSkeleton();
-                          }
-
-                          if (snapshot.hasError) {
-                            return ListView(
-                              children: [
-                                StateMessage(
-                                  variant: StateMessageVariant.error,
-                                  title: t.errorTitle,
-                                  description: t.errorDescription,
-                                  retryLabel: t.retry,
-                                  onRetry: () => setState(
-                                    () => _relatedFuture = _loadRelated(),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }
-
-                          final songs = snapshot.data ?? const [];
-
-                          if (songs.isEmpty) {
-                            return ListView(
-                              children: [
-                                StateMessage(
-                                  variant: StateMessageVariant.empty,
-                                  title: t.emptyTitle,
-                                  description: t.emptyDescription(
-                                    countryLabel(widget.country, lang),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }
-
-                          return ListView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            itemCount: songs.length,
-                            itemBuilder: (context, index) {
-                              final song = songs[index];
-                              final isPlaying = song.id == _videoId;
-                              return SongTile(
-                                key: isPlaying ? _nowPlayingKey : null,
-                                song: song,
-                                rank: index + 1,
-                                tab: _relatedTab,
-                                isPlaying: isPlaying,
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );

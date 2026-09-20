@@ -41,7 +41,13 @@ export function SongRow({
       </span>
 
       <span className="thumb relative h-[47px] w-[84px] overflow-hidden md:h-[63px] md:w-[112px]">
-        <Image src={song.thumbnailUrl} alt="" fill sizes="112px" className="object-cover" />
+        <Image
+          src={song.thumbnailUrl}
+          alt=""
+          fill
+          sizes="(min-width: 768px) 112px, 84px"
+          className="object-cover"
+        />
         <span className="thumb-play absolute inset-0 flex items-center justify-center bg-black/0 transition-colors">
           <PlayIcon size={16} />
         </span>

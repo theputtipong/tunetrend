@@ -31,7 +31,13 @@ export const WatchQueueRow = forwardRef<
       <span className="rank w-5 flex-shrink-0 text-[15px]">{String(rank).padStart(2, "0")}</span>
 
       <span className="thumb relative h-[47px] w-[84px] flex-shrink-0 overflow-hidden md:h-[63px] md:w-[112px]">
-        <Image src={song.thumbnailUrl} alt="" fill sizes="112px" className="object-cover" />
+        <Image
+          src={song.thumbnailUrl}
+          alt=""
+          fill
+          sizes="(min-width: 768px) 112px, 84px"
+          className="object-cover"
+        />
         {!isPlaying && (
           <span className="thumb-play absolute inset-0 flex items-center justify-center bg-black/0 transition-colors">
             <PlayIcon size={16} />

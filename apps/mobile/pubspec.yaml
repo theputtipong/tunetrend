@@ -43,7 +43,7 @@ dependencies:
   showcaseview: ^5.1.0
   share_plus: ^13.3.0
   firebase_core: ^4.14.0
-  firebase_crashlytics: ^5.3.0
+  firebase_crashlytics: ^5.4.0
   firebase_remote_config: ^6.6.0
   firebase_analytics: ^12.5.0
   firebase_performance: ^0.11.5

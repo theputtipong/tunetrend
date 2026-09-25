@@ -2,7 +2,8 @@ import Link from "next/link";
 import { COUNTRIES, countryLabel } from "@/lib/countries";
 import { dictionaries, type Lang } from "@/lib/i18n";
 import { BuyMeCoffeeButton } from "./BuyMeCoffeeButton";
-import { GlobeIcon, InfoIcon, LogoMark } from "./icons";
+import { PLAY_STORE_URL } from "@/lib/installPrompt";
+import { GetAppIcon, GlobeIcon, InfoIcon, LogoMark } from "./icons";
 import { LanguageToggle } from "./LanguageToggle";
 import { MobileMenu } from "./MobileMenu";
 import { ReplayTourButton } from "./ReplayTourButton";
@@ -29,6 +30,16 @@ export function Header({
             <BuyMeCoffeeButton label={t.buyCoffee} size={32} dataTour="buy-coffee" />
           </div>
           <div className="hidden items-center gap-2 sm:flex">
+            <a
+              href={PLAY_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="theme-toggle"
+              aria-label={t.getApp}
+              title={t.getApp}
+            >
+              <GetAppIcon />
+            </a>
             <Link
               href="/about"
               className="theme-toggle"

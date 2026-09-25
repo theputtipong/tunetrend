@@ -10,6 +10,7 @@ export const en = {
     menu: "More options",
     musicCategory: "Music",
     privacy: "Privacy Policy",
+    getApp: "Get the TuneTrend app",
   },
   tabs: {
     trending: "Trending",

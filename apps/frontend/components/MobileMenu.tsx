@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { dictionaries, type Lang } from "@/lib/i18n";
-import { InfoIcon, MoreIcon, ShieldIcon } from "./icons";
+import { PLAY_STORE_URL } from "@/lib/installPrompt";
+import { GetAppIcon, InfoIcon, MoreIcon, ShieldIcon } from "./icons";
 import { LanguageToggle } from "./LanguageToggle";
 import { ReplayTourButton } from "./ReplayTourButton";
 import { ThemeToggle } from "./ThemeToggle";
@@ -13,11 +14,13 @@ export function MobileMenu({
   showAbout = true,
   showReplayTour = true,
   showPrivacy = true,
+  showGetApp = true,
 }: Readonly<{
   lang: Lang;
   showAbout?: boolean;
   showReplayTour?: boolean;
   showPrivacy?: boolean;
+  showGetApp?: boolean;
 }>) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -51,6 +54,18 @@ export function MobileMenu({
 
       {isOpen && (
         <div className="absolute right-0 top-full z-50 mt-2 min-w-[170px] rounded-xl border border-[var(--border)] bg-[var(--bg-elev)] p-1.5 shadow-lg">
+          {showGetApp && (
+            <a
+              href={PLAY_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={close}
+              className="menu-item"
+            >
+              <GetAppIcon size={16} />
+              {t.getApp}
+            </a>
+          )}
           {showReplayTour && <ReplayTourButton lang={lang} variant="menu-item" onAction={close} />}
           <LanguageToggle variant="menu-item" onAction={close} />
           <ThemeToggle lang={lang} variant="menu-item" onAction={close} />

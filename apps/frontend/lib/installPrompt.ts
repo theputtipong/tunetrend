@@ -39,9 +39,11 @@ export const INSTALL_PROMPT_CONFIG: { android: AndroidInstallMode; ios: IosInsta
   ios: readIosMode(),
 };
 
+export const ANDROID_PACKAGE_NAME = "com.tunetrend.tunetrend_mobile";
+
 export const PLAY_STORE_URL =
   process.env.NEXT_PUBLIC_PLAY_STORE_URL ||
-  "https://play.google.com/store/apps/details?id=com.tunetrend.tunetrend_mobile";
+  `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE_NAME}`;
 
 export const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL ?? "";
 
@@ -95,13 +97,16 @@ export function computeEligibleKind(
   hasAndroidInstallEvent: boolean,
 ): PromptKind | null {
   if (platform === MobilePlatform.Android) {
-    if (INSTALL_PROMPT_CONFIG.android === AndroidInstallMode.Pwa) {
-      return hasAndroidInstallEvent ? "android-pwa" : null;
+    if (INSTALL_PROMPT_CONFIG.android === AndroidInstallMode.Disabled) {
+      return null;
     }
-    if (INSTALL_PROMPT_CONFIG.android === AndroidInstallMode.PlayStore) {
-      return "android-store";
+    // In "pwa" mode we can only install when Chrome hands us a beforeinstallprompt event.
+    // The manifest now prefers the real Play Store app, so Chrome stops firing it — fall
+    // back to the store instead of showing nothing.
+    if (INSTALL_PROMPT_CONFIG.android === AndroidInstallMode.Pwa && hasAndroidInstallEvent) {
+      return "android-pwa";
     }
-    return null;
+    return PLAY_STORE_URL ? "android-store" : null;
   }
 
   if (INSTALL_PROMPT_CONFIG.ios === IosInstallMode.Pwa) {

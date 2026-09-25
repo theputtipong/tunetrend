@@ -209,6 +209,24 @@ export function ShieldIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+export function GetAppIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+      <path d="M12 7v7M9 11.2l3 3 3-3" />
+    </svg>
+  );
+}
+
 export function CheckIcon({ size = 20 }: { size?: number }) {
   return (
     <svg

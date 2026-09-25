@@ -12,6 +12,7 @@ export const th: Dictionary = {
     menu: "ตัวเลือกเพิ่มเติม",
     musicCategory: "เพลง",
     privacy: "นโยบายความเป็นส่วนตัว",
+    getApp: "โหลดแอป TuneTrend",
   },
   tabs: {
     trending: "กำลังฮิต",

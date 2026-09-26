@@ -3,8 +3,6 @@ import 'package:shimmer/shimmer.dart';
 
 import '../constants/theme.dart';
 
-/// Placeholder list shown instead of a spinner while songs are loading, so
-/// the trends list layout is visible immediately even on a slow connection.
 class SongListSkeleton extends StatelessWidget {
   final int itemCount;
 

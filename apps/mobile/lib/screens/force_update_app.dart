@@ -9,11 +9,6 @@ import '../widgets/logo_mark.dart';
 const _playStoreUrl =
     'https://play.google.com/store/apps/details?id=com.tunetrend.tunetrend_mobile';
 
-/// Self-contained replacement for [TuneTrendApp], shown instead of the real
-/// app when the installed version is below Remote Config's `min_app_version`.
-/// Runs before [LangController]/[ThemeController] have loaded their saved
-/// preferences, so it reads the device locale and platform brightness
-/// directly — same pattern as [MaintenanceApp].
 class ForceUpdateApp extends StatelessWidget {
   const ForceUpdateApp({super.key});
 

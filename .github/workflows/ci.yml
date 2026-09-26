@@ -91,13 +91,6 @@ jobs:
           keyAlias=$ANDROID_KEY_ALIAS
           storeFile=$KEYSTORE_PATH
           EOF
-      # --obfuscate strips readable Dart symbol names from the release build
-      # (harder to reverse-engineer from the shipped APK); --split-debug-info
-      # writes the symbol map that step maps obfuscated names back — needed
-      # to make sense of a Crashlytics stack trace from a release build via
-      # `flutter symbolize`, so it's archived as a build artifact below.
-      # Play Console requires the .aab (App Bundle) for the actual upload;
-      # the .apk is built alongside it only for manual/sideload testing.
       - run: |
           flutter build appbundle --release \
             --obfuscate \

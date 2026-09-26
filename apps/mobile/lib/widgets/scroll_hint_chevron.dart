@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../constants/theme.dart';
 
-/// A gently bobbing chevron over a trailing fade, hinting that the row
-/// underneath it scrolls horizontally. Purely decorative — taps pass through.
 class ScrollHintChevron extends StatefulWidget {
   const ScrollHintChevron({super.key});
 

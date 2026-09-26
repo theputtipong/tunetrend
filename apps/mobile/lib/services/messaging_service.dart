@@ -13,8 +13,7 @@ const _channel = AndroidNotificationChannel(
 
 final _localNotifications = FlutterLocalNotificationsPlugin();
 
-/// Runs in a separate isolate when a data/notification message arrives while
-/// the app is backgrounded or terminated — must stay a top-level function.
+// Runs in a background isolate, so it must stay a top-level function.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('🔔 [Messaging] background message: ${message.messageId}');

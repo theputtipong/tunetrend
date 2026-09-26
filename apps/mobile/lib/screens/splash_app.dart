@@ -15,10 +15,6 @@ import 'tune_trend_app.dart';
 
 enum _BootPhase { loading, maintenance, forceUpdate, ready }
 
-/// Shown immediately on launch — plays the brand Lottie animation while
-/// Firebase Messaging/Remote Config finish loading, then swaps itself for
-/// [MaintenanceApp], [ForceUpdateApp], or [TuneTrendApp]. Same
-/// self-contained-MaterialApp pattern those two already use.
 class SplashApp extends StatefulWidget {
   const SplashApp({super.key});
 
@@ -27,7 +23,6 @@ class SplashApp extends StatefulWidget {
 }
 
 class _SplashAppState extends State<SplashApp> {
-  // Keeps the animation from flashing by for near-instant boots.
   static const _minDuration = Duration(milliseconds: 1500);
 
   _BootPhase _phase = _BootPhase.loading;

@@ -19,7 +19,6 @@ type responseEnvelope struct {
 	Error   string `json:"error"`
 }
 
-// New คืนค่า middleware สำหรับบันทึก log ของทุก request
 func New(repo domain.ApiLogRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if shouldSkip(c.Path()) {

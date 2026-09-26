@@ -1,5 +1,4 @@
-// รหัสหมวดหมู่ YouTube "Music" — เพลงจาก /trends, /trends/new, /trends/mv (ไม่ผ่าน category filter)
-// ใช้ค่านี้เท่ากับ MusicCategoryID ฝั่ง backend (apps/backend/internal/domain/song.go)
+// Must match MusicCategoryID in apps/backend/internal/domain/song.go.
 const kMusicCategoryId = '10';
 
 enum TrendTab {

@@ -32,13 +32,10 @@ export default async function WatchPage({
   const tab = resolveTab(rawTab);
   const lang = await getLang();
 
-  // Related queue intentionally mirrors the mobile app: it always shows the
-  // generic (non-category-filtered) list for the tab, even if the video being
-  // watched came from a category-filtered view.
+  // The related queue is always the unfiltered list for the tab, even when the video came from a category view.
   const songs = await fetchSongs(country, tab);
   const current = songs.find((s) => s.id === videoId);
 
-  // Discover carousel is a nice-to-have — never let it break the watch page.
   const discoverItems = await fetchDiscoverItems().catch(() => []);
 
   return (

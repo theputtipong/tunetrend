@@ -170,13 +170,9 @@ export function WatchPageClient({
 
     if (navigator.share) {
       try {
-        // Only pass `text` — it already embeds the title, song link, and Play
-        // Store link. Passing `title`/`url` as separate fields too makes most
-        // share targets append them a second time on top of `text`.
+        // Share targets append `title`/`url` on top of `text`, which already contains both.
         await navigator.share({ text });
-      } catch {
-        // user cancelled — no-op
-      }
+      } catch {}
       return;
     }
 
@@ -189,12 +185,7 @@ export function WatchPageClient({
 
   return (
     <div className="flex min-h-full flex-col bg-[var(--bg)] md:grid md:h-screen md:grid-cols-[75%_25%] md:grid-rows-[70%_30%]">
-      {/* Column 1, row 1 (70%): header + player stacked — fits together with
-          the queue sidebar in one screen, no outer page scroll on desktop */}
       <div className="flex min-h-0 flex-col md:col-start-1 md:row-start-1">
-        {/* Header: back / title / share — same background as the tabs/queue
-            column so it reads as one continuous surface instead of a bar
-            that blends into (or clashes with) the video below it */}
         <div className="flex items-center gap-2 bg-[var(--bg)] px-3 py-2.5">
           <button
             type="button"
@@ -218,9 +209,6 @@ export function WatchPageClient({
           </button>
         </div>
 
-        {/* Player + auto-advance banner — deliberately inverted from the
-            current theme (like the now-playing overlay) so the player area
-            stays visually distinct: dark in light theme, light in dark theme */}
         <div className="min-h-0 flex-1 bg-[var(--player-bg)]">
           {copiedFeedback && (
             <div className="px-3 pb-1 text-xs text-[var(--accent)]">{t.shareCopied}</div>
@@ -250,7 +238,6 @@ export function WatchPageClient({
         </div>
       </div>
 
-      {/* Tabs + queue sidebar — desktop: column 2, row 1 (same 70% height as header+player) */}
       <div className="flex min-h-0 flex-1 flex-col bg-[var(--bg)] md:col-start-2 md:row-start-1 md:h-full">
         <div className="flex gap-6 px-4 pt-3.5">
           {visibleTabs.map((key) => (
@@ -304,7 +291,6 @@ export function WatchPageClient({
         </div>
       </div>
 
-      {/* Discover carousel — desktop-only, row 2 (30%), spans both columns */}
       <div className="hidden min-h-0 md:col-start-1 md:col-span-2 md:row-start-2 md:block md:overflow-hidden">
         <DiscoverCarousel items={discoverItems} lang={lang} />
       </div>

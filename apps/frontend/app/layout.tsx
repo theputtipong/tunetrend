@@ -7,15 +7,7 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
-// display: "optional" instead of the next/font default ("swap") — this site's
-// Thai copy mixes in a lot of English/technical terms (e.g. "full-stack",
-// "microservices"), and those Latin words are the only part of the text that
-// actually uses this self-hosted font. Swapping it in after first paint can
-// change those words' width just enough to shift a paragraph's line wrap,
-// pushing every section below it down/up by a full line (a real, measured
-// CLS regression). "optional" means the browser commits to the fallback font
-// for the whole page life if the webfont isn't ready almost immediately,
-// instead of swapping mid-render.
+// "swap" re-wraps Thai paragraphs that contain Latin words once the webfont loads, causing CLS.
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],

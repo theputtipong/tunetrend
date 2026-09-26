@@ -6,8 +6,6 @@ import '../constants/theme.dart';
 
 const _barCount = 10;
 
-/// A small looping equalizer-bar animation, shown over the song row that
-/// matches the video currently playing.
 class NowPlayingIndicator extends StatefulWidget {
   const NowPlayingIndicator({super.key});
 

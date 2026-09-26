@@ -5,10 +5,6 @@ import '../i18n/dictionary.dart';
 import '../i18n/lang.dart';
 import '../widgets/logo_mark.dart';
 
-/// Self-contained replacement for [TuneTrendApp], shown instead of the real
-/// app when Remote Config reports `is_maintenance = true`. Runs before
-/// [LangController]/[ThemeController] have loaded their saved preferences,
-/// so it reads the device locale and platform brightness directly.
 class MaintenanceApp extends StatelessWidget {
   const MaintenanceApp({super.key});
 

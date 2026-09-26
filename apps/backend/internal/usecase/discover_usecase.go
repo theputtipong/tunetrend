@@ -23,9 +23,7 @@ func NewDiscoverUsecase(
 
 func (u *discoverUsecase) GetDiscoverItems() ([]domain.DiscoverItem, error) {
 	items := make([]domain.DiscoverItem, 0)
-	// seenGlobal กันวิดีโอเดียวกันโผล่ซ้ำข้ามหมวดหมู่ (เช่นวิดีโอที่ YouTube
-	// จัดให้ติด top ทั้ง Film & Animation และ Entertainment พร้อมกัน) — ไม่ใช่
-	// แค่กันซ้ำภายในหมวดเดียวกันเท่านั้น
+	// A video can top several categories at once; each one appears only under the first.
 	seenGlobal := make(map[string]bool)
 
 	for _, cfg := range u.categoryConfigs {
@@ -45,10 +43,7 @@ func (u *discoverUsecase) GetDiscoverItems() ([]domain.DiscoverItem, error) {
 	return items, nil
 }
 
-// dedupeTopN คัดวิดีโอไม่ให้ซ้ำกับที่เคยเลือกไปแล้ว (ทั้งในหมวดนี้และหมวดอื่น
-// ก่อนหน้า ผ่าน seenGlobal) แล้วเอาแค่ N รายการแรกที่ยอดวิวสูงสุด (videos
-// ถูกเรียงมาจากยอดวิวมากไปน้อยแล้ว) — อาจได้น้อยกว่า N ถ้าตัวเลือกที่เหลือ
-// ถูกหมวดอื่นเอาไปแล้วหมด ถือว่ายอมรับได้ตามที่ตกลงไว้ (1-2 รายการต่อหมวด)
+// Returning fewer than n items is accepted when earlier categories already took the rest.
 func dedupeTopN(
 	cfg domain.CategoryVideoConfig,
 	videos []domain.CategoryVideo,

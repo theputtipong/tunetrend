@@ -4,9 +4,6 @@ import 'package:shimmer/shimmer.dart';
 
 import '../constants/theme.dart';
 
-/// Network image with disk/memory caching (so the same thumbnail isn't
-/// re-downloaded on every rebuild or scroll) and a shimmering placeholder
-/// while it loads.
 class CachedThumbnail extends StatelessWidget {
   final String imageUrl;
   final double? width;

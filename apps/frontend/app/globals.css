@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-/* Light เป็นค่า default — Dark ครอบทับผ่าน prefers-color-scheme และ [data-theme]
-   (ตัว [data-theme] มาจาก ThemeToggle ที่ผู้ใช้กดเลือกเอง อยู่เหนือ system preference เสมอ) */
 :root {
   --bg: #fafafa;
   --bg-elev: oklch(100% 0 0);
@@ -17,11 +15,7 @@
   --thumb-to: oklch(84% 0.014 260);
   --error-bg: oklch(93% 0.05 45);
   --error-text: oklch(45% 0.16 45);
-  /* ตั้งใจสลับ tone กลับด้าน (ไม่ใช่สีเดียวกับธีม) สำหรับ overlay "now playing"
-     — ให้เด่นออกมาจากพื้นหลังปกติ เหมือน mobile (song_tile.dart) */
   --now-playing-overlay: rgba(0, 0, 0, 0.72);
-  /* พื้นหลังโซนเล่นวิดีโอ ตั้งใจสลับ tone กลับด้านจากธีมหลักเช่นกัน
-     (light theme -> โซนวิดีโอเข้ม, dark theme -> โซนวิดีโอสว่าง) */
   --player-bg: #000000;
   --player-fg: #ffffff;
   --player-banner-bg: #2a2d37;
@@ -96,7 +90,6 @@ a:hover {
   font-family: var(--font-display), system-ui, sans-serif;
 }
 
-/* Theme toggle */
 .theme-toggle {
   display: inline-flex;
   align-items: center;
@@ -138,7 +131,6 @@ a:hover {
   background: var(--bg-elev-2);
 }
 
-/* Country / navigation pills */
 .pill {
   display: inline-flex;
   flex-shrink: 0;
@@ -160,7 +152,6 @@ a:hover {
   border-color: transparent;
 }
 
-/* Tabs */
 .tabbar {
   border-bottom: 1px solid var(--border);
 }
@@ -191,7 +182,6 @@ a:hover {
   color: var(--text-3);
 }
 
-/* Song list */
 .list-caption {
   padding: 14px 14px 10px;
   font-size: 12.5px;
@@ -273,7 +263,6 @@ a:hover {
   margin-top: 2px;
 }
 
-/* About page stat cards */
 .stat-card {
   padding: 16px 14px;
   border-radius: 14px;
@@ -293,7 +282,6 @@ a:hover {
   color: var(--text-3);
 }
 
-/* Empty / error state */
 .state-icon {
   width: 88px;
   height: 88px;
@@ -336,8 +324,6 @@ a:hover {
   cursor: pointer;
 }
 
-/* Onboarding tour (driver.js) — override default theme กับ CSS var เดิมของแอป
-   เพื่อให้ popover เข้ากับ light/dark theme อัตโนมัติ */
 .tunetrend-tour {
   background: var(--bg-elev) !important;
   color: var(--text) !important;
@@ -375,7 +361,6 @@ a:hover {
   border-right-color: var(--bg-elev) !important;
 }
 
-/* Now-playing equalizer bars (watch queue) */
 @keyframes now-playing-bar {
   0%,
   100% {

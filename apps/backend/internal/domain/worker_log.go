@@ -26,8 +26,6 @@ type WorkerLogRepository interface {
 	CreateLog(logEntry WorkerLog) error
 	WithLock(lockKey int64, fn func() error) (acquired bool, err error)
 	DeleteOlderThan(cutoff time.Time) error
-	// LatestStatuses คืนค่าสถานะล่าสุดของแต่ละ job
 	LatestStatuses(jobNames []string, countryCode string) (map[string]string, error)
-	// JobsWithSuccessSince คืนค่า job ที่มี log สำเร็จตั้งแต่เวลา since
 	JobsWithSuccessSince(jobNames []string, countryCode string, since time.Time) (map[string]bool, error)
 }

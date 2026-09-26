@@ -20,17 +20,10 @@ import '../widgets/trend_tabs.dart';
 const _autoPlayDelay = Duration(seconds: 5);
 const _autoPlayPromptCountdownSeconds = 5;
 
-// youtube_player_iframe's autoFullScreen just checks width > height with no
-// device-size awareness, so a tablet rotated to landscape (but not expanded)
-// would otherwise auto-enter fullscreen. Above this breakpoint we disable
-// that auto-trigger and rely on the player's own fullscreen button instead.
+// autoFullScreen only checks width > height, so tablets in landscape would be forced fullscreen.
 const _tabletShortestSideBreakpoint = 600.0;
 
-// Sizing the video by full width alone (height = width * 9/16) can demand
-// more height than the screen has in wide-landscape layouts (e.g. a 16:10
-// tablet rotated sideways) — previously masked because autoFullScreen took
-// over the display before the Column had to lay out. These reserve the
-// fixed-height siblings so the video can be height-capped to what's left.
+// Reserved so a 16:9 video can be height-capped in wide landscape layouts.
 const _headerRowHeight = kMinInteractiveDimension;
 const _autoAdvanceBannerHeight = 56.0;
 
@@ -62,16 +55,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   bool? _autoPlayChoice;
   bool _handledEnd = false;
 
-  // Bumped whenever the related tab changes, so a pending _playNextAfterDelay
-  // countdown started under the old tab's ordering can detect it's stale and
-  // abort instead of jumping to a video from a list the user has since left.
+  // Invalidates a pending auto-advance countdown when the related tab changes.
   int _autoPlayGeneration = 0;
   int? _autoAdvanceSecondsLeft;
 
-  // Mutable copies of the widget's initial video, updated in place as
-  // continuous play advances — the controller and its WebView are reused
-  // across the chain instead of tearing down and recreating a new one per
-  // video, which avoids WKWebView teardown races (and the resulting jank).
+  // The controller is reused across videos; recreating it races with WKWebView teardown.
   late String _videoId = widget.videoId;
   late String _title = widget.title;
   late String _categoryId = widget.categoryId;
@@ -109,8 +97,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     );
     _scrollController.jumpTo(estimate);
 
-    // The jump above forces ListView to build items near the target offset;
-    // once the now-playing row actually exists, ease to its exact position.
     await Future<void>.delayed(const Duration(milliseconds: 50));
     final targetContext = _nowPlayingKey.currentContext;
     if (targetContext == null || !targetContext.mounted) return;

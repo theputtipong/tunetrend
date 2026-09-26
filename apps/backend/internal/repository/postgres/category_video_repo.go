@@ -51,10 +51,8 @@ func (r *categoryVideoRepository) GetNewVideos(countryCode string) ([]domain.Cat
 	return videos, err
 }
 
-// GetTopAcrossCountries ใช้ window function เลือก top-N ต่อประเทศในคำสั่งเดียว
-// (ไม่ต้อง query แยกทีละประเทศ) แล้วเรียงผลรวมทั้งหมดตามยอดวิว มากไปน้อย
-// r.tableName ผ่านการ validate เป็น regex + deny-list ตอน boot แล้ว (ดู
-// database.Connect) จึงปลอดภัยที่จะต่อ string ตรงๆ ในคำสั่ง SQL ดิบนี้
+// r.tableName is safe to concatenate: database.Connect validates it against a
+// regex and a reserved-name deny-list at boot.
 func (r *categoryVideoRepository) GetTopAcrossCountries(countries []string, perCountryLimit int) ([]domain.CategoryVideo, error) {
 	var videos []domain.CategoryVideo
 	query := `

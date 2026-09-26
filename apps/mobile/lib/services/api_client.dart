@@ -33,8 +33,7 @@ class ApiClient {
         ),
       ) {
     dio.interceptors.add(DioFirebasePerformanceInterceptor());
-    // Request/response bodies can carry user PII (contact form details) —
-    // only log them in debug builds, never in release.
+    // Bodies can contain contact-form PII.
     if (kDebugMode) {
       dio.interceptors.add(
         LogInterceptor(requestBody: true, responseBody: true),
@@ -44,9 +43,6 @@ class ApiClient {
 
   static final ApiClient _instance = ApiClient._();
 
-  /// The shared Dio client, wired with Firebase Performance and (debug-only)
-  /// logging interceptors. Prefer the typed methods below over calling this
-  /// directly.
   final Dio dio;
 
   Future<List<Song>> fetchSongs(

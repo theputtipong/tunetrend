@@ -15,7 +15,6 @@ func NewVideoCategoryRepository(db *gorm.DB) domain.VideoCategoryRepository {
 	return &videoCategoryRepository{db: db}
 }
 
-// UpsertCategoriesSetActive upsert title, assignable, is_active, deactivated_reason
 func (r *videoCategoryRepository) UpsertCategoriesSetActive(categories []domain.VideoCategory) error {
 	if len(categories) == 0 {
 		return nil
@@ -27,7 +26,6 @@ func (r *videoCategoryRepository) UpsertCategoriesSetActive(categories []domain.
 	}).Create(&categories).Error
 }
 
-// UpsertCategoriesPreserveActive upsert เฉพาะ title และ assignable
 func (r *videoCategoryRepository) UpsertCategoriesPreserveActive(categories []domain.VideoCategory) error {
 	if len(categories) == 0 {
 		return nil

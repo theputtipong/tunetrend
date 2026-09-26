@@ -11,9 +11,6 @@ const kPrivacyPolicyUrl = '$kWebBaseUrl/privacy';
 const kPlayStoreUrl =
     'https://play.google.com/store/apps/details?id=com.tunetrend.tunetrend_mobile';
 
-// Not published yet (bundle id: com.tunetrend.tunetrendMobile).
-// Fill in with https://apps.apple.com/app/idXXXXXXXXXX once TuneTrend ships
-// on the App Store.
 const kAppStoreUrl = '';
 
 String? get appDownloadUrl {

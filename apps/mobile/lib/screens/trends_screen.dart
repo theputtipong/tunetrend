@@ -62,7 +62,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
       final categories = await _api.fetchCategories(_country);
       if (mounted) setState(() => _categories = categories);
     } catch (_) {
-      // Category filter is a bonus affordance — fall back to no filter on failure.
+      // The category filter is optional; hide it when categories fail to load.
     }
   }
 

@@ -1,9 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 
-/// Centralized wrapper around Firebase Analytics. Every logging method is
-/// best-effort: failures are swallowed so a logging hiccup never affects the
-/// UI flow that triggered it, and callers should not `await` these methods.
 class AnalyticsService {
   factory AnalyticsService() => _instance;
 
@@ -13,8 +10,6 @@ class AnalyticsService {
 
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
 
-  /// Attach to [MaterialApp.navigatorObservers] to automatically log screen
-  /// views as routes are pushed/popped.
   late final FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(
     analytics: _analytics,
   );

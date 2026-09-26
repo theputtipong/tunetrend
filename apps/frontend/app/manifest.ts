@@ -14,7 +14,6 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
       { src: "/apple-icon.png", sizes: "180x180", type: "image/png" },
     ],
-    // The Android app is live, so point browsers at it instead of offering a PWA install.
     related_applications: [{ platform: "play", id: ANDROID_PACKAGE_NAME, url: PLAY_STORE_URL }],
     prefer_related_applications: true,
   };

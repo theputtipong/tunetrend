@@ -100,9 +100,6 @@ export function computeEligibleKind(
     if (INSTALL_PROMPT_CONFIG.android === AndroidInstallMode.Disabled) {
       return null;
     }
-    // In "pwa" mode we can only install when Chrome hands us a beforeinstallprompt event.
-    // The manifest now prefers the real Play Store app, so Chrome stops firing it — fall
-    // back to the store instead of showing nothing.
     if (INSTALL_PROMPT_CONFIG.android === AndroidInstallMode.Pwa && hasAndroidInstallEvent) {
       return "android-pwa";
     }

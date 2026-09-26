@@ -171,7 +171,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     final origin = box != null
         ? (box.localToGlobal(Offset.zero) & box.size)
         : null;
-    final url = 'https://www.youtube.com/watch?v=$_videoId';
+    final url = watchPageUrl(widget.country, _videoId, _relatedTab);
 
     SharePlus.instance.share(
       ShareParams(

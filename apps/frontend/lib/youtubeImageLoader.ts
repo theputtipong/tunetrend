@@ -2,14 +2,10 @@ import type { ImageLoaderProps } from "next/image";
 
 const YT_THUMB_PATTERN = /^https:\/\/(?:i\.ytimg\.com|img\.youtube\.com)\/vi\/([A-Za-z0-9_-]+)\//;
 
-// Only sizes every video is guaranteed to have; sddefault/maxresdefault 404 on many videos.
-// default.jpg is skipped: it is 4:3 at 120x90, so it would crop differently than the rest.
 const SMALL_FILE = "mqdefault.jpg";
 const SMALL_MAX_WIDTH = 320;
 const LARGE_FILE = "hqdefault.jpg";
 
-// Serve YouTube thumbnails straight from Google's CDN instead of /_next/image,
-// which would burn Vercel image transformations for no gain.
 export default function youtubeImageLoader({ src, width }: ImageLoaderProps): string {
   const match = YT_THUMB_PATTERN.exec(src);
   if (!match) return src;

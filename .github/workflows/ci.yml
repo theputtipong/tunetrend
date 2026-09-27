@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      version_name:
+        description: "Version name (e.g. 1.0.1). Leave empty to use pubspec.yaml"
+        required: false
+        type: string
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -76,6 +81,15 @@ jobs:
           channel: stable
           flutter-version: 3.47.2
       - run: flutter pub get
+      - name: Resolve version
+        env:
+          INPUT_VERSION_NAME: ${{ inputs.version_name }}
+        run: |
+          VERSION_NAME="${INPUT_VERSION_NAME:-$(grep -E '^version:' pubspec.yaml | sed -E 's/version: *([^+]+).*/\1/')}"
+          BUILD_NUMBER="${{ github.run_number }}"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "### Android release $VERSION_NAME ($BUILD_NUMBER)" >> "$GITHUB_STEP_SUMMARY"
       - name: Configure release signing
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -93,29 +107,33 @@ jobs:
           EOF
       - run: |
           flutter build appbundle --release \
+            --build-name="$VERSION_NAME" \
+            --build-number="$BUILD_NUMBER" \
             --obfuscate \
             --split-debug-info=build/symbols \
             --dart-define=API_BASE_URL=https://tunetrend-api.onrender.com
       - run: |
           flutter build apk --release \
+            --build-name="$VERSION_NAME" \
+            --build-number="$BUILD_NUMBER" \
             --obfuscate \
             --split-debug-info=build/symbols \
             --dart-define=API_BASE_URL=https://tunetrend-api.onrender.com
       - name: Upload Dart debug symbols (for flutter symbolize)
         uses: actions/upload-artifact@v4
         with:
-          name: dart-debug-symbols-${{ github.sha }}
+          name: dart-debug-symbols-${{ env.VERSION_NAME }}-${{ env.BUILD_NUMBER }}
           path: apps/mobile/build/symbols
           retention-days: 90
       - name: Upload release AAB (for Play Console upload)
         uses: actions/upload-artifact@v4
         with:
-          name: release-aab-${{ github.sha }}
+          name: release-aab-${{ env.VERSION_NAME }}-${{ env.BUILD_NUMBER }}
           path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
           retention-days: 90
       - name: Upload release APK (for manual/sideload testing)
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk-${{ github.sha }}
+          name: release-apk-${{ env.VERSION_NAME }}-${{ env.BUILD_NUMBER }}
           path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 90

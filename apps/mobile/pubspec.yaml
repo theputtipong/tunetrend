@@ -2,7 +2,7 @@ name: tunetrend_mobile
 description: "Trending YouTube Music videos by country."
 publish_to: 'none'
 
-version: 1.0.0+2
+version: 1.0.1+3
 
 environment:
   sdk: ^3.13.0

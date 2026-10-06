@@ -19,7 +19,7 @@ dependencies:
   shared_preferences: ^2.3.0
   youtube_player_iframe: ^6.0.2
   showcaseview: ^5.1.0
-  share_plus: ^13.3.0
+  share_plus: ^13.3.1
   firebase_core: ^4.14.0
   firebase_crashlytics: ^5.3.0
   firebase_remote_config: ^6.6.0

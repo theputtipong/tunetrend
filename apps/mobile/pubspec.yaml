@@ -13,7 +13,7 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  google_fonts: ^6.2.0
+  google_fonts: ^9.0.0
   intl: ^0.20.3
   url_launcher: ^6.3.0
   shared_preferences: ^2.3.0

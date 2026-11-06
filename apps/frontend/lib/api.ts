@@ -3,6 +3,8 @@ import type { TabKey } from "./tabs";
 import type { Song, TrendsResponse } from "@/types/song";
 import type { Category, CategoriesResponse } from "@/types/category";
 import type { DiscoverItem, DiscoverResponse } from "@/types/discover";
+import type { LocalSearchResult, SearchedTrend } from "@/types/search";
+import { forwardedClientHeaders } from "./session";
 
 const API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:8080";
 
@@ -72,4 +74,60 @@ export async function fetchCategories(country: CountryCode): Promise<Category[]>
   }
 
   return body.data ?? [];
+}
+
+const SEARCHED_REVALIDATE_SECONDS = 300;
+const OEMBED_REVALIDATE_SECONDS = 86400;
+
+export async function fetchLocalSearch(
+  q: string,
+  country: CountryCode,
+  category: string,
+  clientIp?: string | null,
+): Promise<LocalSearchResult> {
+  const params = new URLSearchParams({ q, country, category });
+  const res = await fetch(`${API_BASE_URL}/search?${params.toString()}`, {
+    cache: "no-store",
+    headers: forwardedClientHeaders(clientIp),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body?.success) {
+    throw new Error(body?.error ?? `TuneTrend API responded with status ${res.status}`);
+  }
+  return { items: body.data?.items ?? [], suggestYouTube: Boolean(body.data?.suggestYouTube) };
+}
+
+export async function fetchSearchedTrends(country: CountryCode): Promise<SearchedTrend[]> {
+  const res = await fetch(`${API_BASE_URL}/trends/searched?country=${country}`, {
+    next: { revalidate: SEARCHED_REVALIDATE_SECONDS },
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body?.success) {
+    throw new Error(body?.error ?? `TuneTrend API responded with status ${res.status}`);
+  }
+  return body.data ?? [];
+}
+
+export async function fetchVideoOEmbed(
+  videoId: string,
+): Promise<{ title: string; channelTitle: string } | null> {
+  const url = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(
+    `https://www.youtube.com/watch?v=${videoId}`,
+  )}`;
+  try {
+    const res = await fetch(url, {
+      next: { revalidate: OEMBED_REVALIDATE_SECONDS },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    if (typeof body?.title !== "string") return null;
+    return {
+      title: body.title,
+      channelTitle: typeof body.author_name === "string" ? body.author_name : "",
+    };
+  } catch {
+    return null;
+  }
 }

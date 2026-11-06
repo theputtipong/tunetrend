@@ -25,6 +25,8 @@ class TrendTabs extends StatelessWidget {
         return showMusicVideos ? t.tabNew : t.tabNewGeneric;
       case TrendTab.musicVideos:
         return t.tabMv;
+      case TrendTab.searched:
+        return t.tabSearched;
     }
   }
 
@@ -33,38 +35,43 @@ class TrendTabs extends StatelessWidget {
     final t = currentStrings;
     final visibleTabs = showMusicVideos
         ? TrendTab.values
-        : TrendTab.values.where((tab) => tab != TrendTab.musicVideos);
-    return Row(
-      children: visibleTabs.map((tab) {
-        final isActive = tab == active;
-        return Padding(
-          padding: const EdgeInsets.only(right: 22),
-          child: InkWell(
-            onTap: () => onSelect(tab),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: isActive ? AppColors.accent : Colors.transparent,
-                    width: 2,
+        : TrendTab.values.where(
+            (tab) => tab != TrendTab.musicVideos && tab != TrendTab.searched,
+          );
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: visibleTabs.map((tab) {
+          final isActive = tab == active;
+          return Padding(
+            padding: const EdgeInsets.only(right: 22),
+            child: InkWell(
+              onTap: () => onSelect(tab),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: isActive ? AppColors.accent : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  _labelFor(tab, t),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13.5,
+                    color: isActive
+                        ? AppColors.textPrimary
+                        : AppColors.textTertiary,
                   ),
                 ),
               ),
-              child: Text(
-                _labelFor(tab, t),
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13.5,
-                  color: isActive
-                      ? AppColors.textPrimary
-                      : AppColors.textTertiary,
-                ),
-              ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 }

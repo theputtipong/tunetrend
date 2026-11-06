@@ -32,6 +32,8 @@ type YouTubeRepository interface {
 	FetchTrending(countryCode string) ([]Song, error)
 	FetchVideoCategories(countryCode string) ([]VideoCategory, error)
 	FetchTrendingByCategory(countryCode, categoryID string) ([]CategoryVideo, error)
+	SearchVideos(query, countryCode, categoryID string) ([]SearchVideo, error)
+	FetchVideosByIDs(ids []string) ([]SearchVideo, error)
 }
 
 type SongUsecase interface {

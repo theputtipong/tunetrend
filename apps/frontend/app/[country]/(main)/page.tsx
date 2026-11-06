@@ -2,8 +2,9 @@ import type { CountryCode } from "@/lib/countries";
 import { isValidCountry, countryLabel } from "@/lib/countries";
 import { dictionaries } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n/server";
-import { resolveTab } from "@/lib/tabs";
+import { resolvePageTab } from "@/lib/tabs";
 import { SongList } from "@/components/SongList";
+import { SearchedList } from "@/components/SearchedList";
 
 export async function generateMetadata({ params }: { params: Promise<{ country: string }> }) {
   const { country: rawCountry } = await params;
@@ -24,9 +25,14 @@ export default async function CountryTrendsPage({
   const { tab: rawTab, category: rawCategory } = await searchParams;
 
   const country = rawCountry.toUpperCase() as CountryCode;
-  const tab = resolveTab(rawTab);
-  const category = tab === "mv" ? "" : (rawCategory ?? "");
+  const tab = resolvePageTab(rawTab);
   const lang = await getLang();
+
+  if (tab === "searched") {
+    return <SearchedList country={country} lang={lang} />;
+  }
+
+  const category = tab === "mv" ? "" : (rawCategory ?? "");
 
   return <SongList country={country} tab={tab} category={category} lang={lang} />;
 }

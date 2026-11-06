@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../constants/app_links.dart';
+import '../constants/auth_config.dart';
 import '../constants/countries.dart';
 import '../constants/tabs.dart';
 import '../constants/theme.dart';
@@ -12,6 +13,8 @@ import '../i18n/dictionary.dart';
 import '../i18n/lang.dart';
 import '../models/song.dart';
 import '../services/api_client.dart';
+import '../services/unavailable_videos.dart';
+import '../widgets/add_to_playlist_sheet.dart';
 import '../widgets/song_list_skeleton.dart';
 import '../widgets/song_tile.dart';
 import '../widgets/state_message.dart';
@@ -33,6 +36,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final String country;
   final String categoryId;
   final TrendTab tab;
+  final List<Song>? queue;
 
   const VideoPlayerScreen({
     super.key,
@@ -41,6 +45,7 @@ class VideoPlayerScreen extends StatefulWidget {
     required this.country,
     required this.categoryId,
     required this.tab,
+    this.queue,
   });
 
   @override
@@ -52,7 +57,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late final YoutubePlayerController _controller;
   StreamSubscription<YoutubePlayerValue>? _playerSub;
 
-  bool? _autoPlayChoice;
+  late bool? _autoPlayChoice = widget.queue != null ? true : null;
   bool _handledEnd = false;
 
   // Invalidates a pending auto-advance countdown when the related tab changes.
@@ -73,8 +78,38 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   List<Song> _relatedSongs = const [];
   late Future<List<Song>> _relatedFuture = _loadRelated();
 
+  bool get _isQueue => widget.queue != null;
+
+  Song get _currentSong {
+    for (final song in _relatedSongs) {
+      if (song.id == _videoId) return song;
+    }
+    return Song(
+      id: _videoId,
+      title: _title,
+      channelTitle: '',
+      thumbnailUrl: '',
+      viewCount: '',
+      countryCode: widget.country,
+      categoryId: _categoryId,
+      publishedAt: '',
+      videoType: 'General',
+    );
+  }
+
   Future<List<Song>> _loadRelated() async {
-    final categoryId = _relatedTab == TrendTab.musicVideos ? '' : _categoryId;
+    final queue = widget.queue;
+    if (queue != null) {
+      _relatedSongs = queue;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _scrollToNowPlaying(),
+      );
+      return queue;
+    }
+    final categoryId =
+        _relatedTab == TrendTab.musicVideos || _relatedTab == TrendTab.searched
+        ? ''
+        : _categoryId;
     final songs = await _api.fetchSongs(
       widget.country,
       _relatedTab,
@@ -128,7 +163,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   Future<void> _onPlayerValueChanged(YoutubePlayerValue value) async {
-    if (value.playerState != PlayerState.ended || _handledEnd) return;
+    if (value.hasError) UnavailableVideos.instance.mark(_videoId);
+    final skipBroken = _isQueue && value.hasError;
+    if ((value.playerState != PlayerState.ended && !skipBroken) ||
+        _handledEnd) {
+      return;
+    }
     _handledEnd = true;
     if (!mounted) return;
 
@@ -203,10 +243,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     if (songs.isEmpty) return;
 
     final currentIndex = songs.indexWhere((song) => song.id == _videoId);
-    final Song? next = currentIndex == -1
-        ? songs.first
-        : (currentIndex + 1 < songs.length ? songs[currentIndex + 1] : null);
-    if (next == null) return;
+    Song? candidate;
+    for (var i = currentIndex + 1; i < songs.length; i++) {
+      if (!_isQueue || !UnavailableVideos.instance.contains(songs[i].id)) {
+        candidate = songs[i];
+        break;
+      }
+    }
+    if (candidate == null) return;
+    final next = candidate;
 
     final generation = _autoPlayGeneration;
     for (
@@ -306,6 +351,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         ),
                       ),
                     ),
+                    if (kLoginEnabled)
+                      IconButton(
+                        onPressed: () => showAddToPlaylistSheet(
+                          context,
+                          _currentSong,
+                          source: 'player',
+                        ),
+                        tooltip: t.addToPlaylistTooltip,
+                        icon: const Icon(
+                          Icons.playlist_add,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
                     IconButton(
                       key: _shareButtonKey,
                       onPressed: _shareSong,
@@ -371,15 +430,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     color: AppColors.background,
                     child: Column(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                          child: TrendTabs(
-                            active: _relatedTab,
-                            showMusicVideos: _showMv,
-                            onSelect: _selectRelatedTab,
+                        if (!_isQueue) ...[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                            child: TrendTabs(
+                              active: _relatedTab,
+                              showMusicVideos: _showMv,
+                              onSelect: _selectRelatedTab,
+                            ),
                           ),
-                        ),
-                        Divider(height: 1, color: AppColors.border),
+                          Divider(height: 1, color: AppColors.border),
+                        ],
                         Expanded(
                           child: FutureBuilder<List<Song>>(
                             future: _relatedFuture,
@@ -436,6 +497,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                     rank: index + 1,
                                     tab: _relatedTab,
                                     isPlaying: isPlaying,
+                                    queue: widget.queue,
+                                    analyticsSource: _isQueue
+                                        ? 'playlist'
+                                        : 'player',
                                   );
                                 },
                               );

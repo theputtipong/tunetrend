@@ -8,21 +8,43 @@ import { LanguageToggle } from "./LanguageToggle";
 import { MobileMenu } from "./MobileMenu";
 import { ReplayTourButton } from "./ReplayTourButton";
 import { ThemeToggle } from "./ThemeToggle";
-import type { TabKey } from "@/lib/tabs";
+import { HeaderAuth } from "./auth/AccountMenu";
+import { SearchBox } from "./search/SearchBox";
 
 export function Header({
   activeCountry,
-  tab,
+  countrySuffix,
   lang,
-}: Readonly<{ activeCountry: string; tab: TabKey; lang: Lang }>) {
+  searchQuery,
+  searchCategory,
+}: Readonly<{
+  activeCountry: string;
+  countrySuffix: string;
+  lang: Lang;
+  searchQuery?: string;
+  searchCategory?: string;
+}>) {
   const t = dictionaries[lang].nav;
 
   return (
     <div className="flex flex-col gap-3 px-4 py-4 md:px-8 md:py-6">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-shrink-0 items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <Link
+          href={`/${activeCountry.toLowerCase()}`}
+          className="flex flex-shrink-0 items-center gap-2 text-[var(--text)] hover:text-[var(--text)]"
+        >
           <LogoMark size={30} />
           <span className="font-display text-[21px] font-bold tracking-[-0.01em]">TuneTrend</span>
+        </Link>
+
+        <div className="order-last w-full md:order-none md:w-auto md:max-w-md md:flex-1">
+          <SearchBox
+            key={`${searchQuery ?? ""}|${searchCategory ?? ""}`}
+            country={activeCountry}
+            lang={lang}
+            initialQuery={searchQuery}
+            category={searchCategory}
+          />
         </div>
 
         <div className="flex flex-shrink-0 items-center gap-2">
@@ -54,6 +76,7 @@ export function Header({
             <ReplayTourButton lang={lang} />
           </div>
           <MobileMenu lang={lang} />
+          <HeaderAuth />
         </div>
       </div>
 
@@ -67,7 +90,7 @@ export function Header({
           return (
             <Link
               key={c.code}
-              href={`/${c.code.toLowerCase()}?tab=${tab}`}
+              href={`/${c.code.toLowerCase()}${countrySuffix}`}
               className={active ? "pill pill--active" : "pill"}
               title={countryLabel(c.code, lang)}
             >

@@ -8,9 +8,13 @@ import (
 	"time"
 
 	"tunetrend-backend/internal/core/apilog"
+	"tunetrend-backend/internal/core/auth"
 	"tunetrend-backend/internal/core/database"
 	"tunetrend-backend/internal/core/mail"
 	"tunetrend-backend/internal/core/ratelimit"
+	"tunetrend-backend/internal/core/searchcache"
+	"tunetrend-backend/internal/core/upstash"
+	"tunetrend-backend/internal/core/ytquota"
 	"tunetrend-backend/internal/delivery/http"
 	"tunetrend-backend/internal/domain"
 	"tunetrend-backend/internal/repository/postgres"
@@ -37,8 +41,11 @@ func main() {
 	countries := strings.Split(workerSettings.Countries, ",")
 
 	songRepo := postgres.NewSongRepository(db)
-	ytRepo := youtube.NewYouTubeRepository()
 	workerLogRepo := postgres.NewWorkerLogRepository(db)
+	upstashClient := upstash.NewFromEnv()
+	mailer := mail.NewResendMailer()
+	quotaGuard := ytquota.New(upstashClient, mailer, workerLogRepo, ytquota.OptionsFromEnv())
+	ytRepo := ytquota.WrapYouTube(youtube.NewYouTubeRepository(), quotaGuard)
 	categoryRepo := postgres.NewVideoCategoryRepository(db)
 
 	categoryRepos := make(map[string]domain.CategoryVideoRepository, len(categoryConfigs))
@@ -58,9 +65,23 @@ func main() {
 	songHandler := http.NewSongHandler(songUsecase)
 
 	contactRepo := postgres.NewContactRepository(db)
-	mailer := mail.NewResendMailer()
 	contactUsecase := usecase.NewContactUsecase(contactRepo, mailer)
 	contactHandler := http.NewContactHandler(contactUsecase)
+
+	sessionTokens := auth.NewSessionTokens(os.Getenv("JWT_SECRET"), auth.SessionTTL)
+	googleVerifier := auth.NewGoogleVerifier(os.Getenv("GOOGLE_CLIENT_IDS"))
+	if !sessionTokens.Configured() || !googleVerifier.Configured() {
+		log.Println("⚠️  JWT_SECRET (>=32 bytes) หรือ GOOGLE_CLIENT_IDS ยังไม่ได้ตั้ง — endpoint auth จะตอบ 500")
+	}
+	authUsecase := usecase.NewAuthUsecase(googleVerifier, sessionTokens, postgres.NewUserRepository(db))
+	playlistUsecase := usecase.NewPlaylistUsecase(postgres.NewPlaylistRepository(db))
+
+	searchUsecase := usecase.NewSearchUsecase(usecase.SearchDeps{
+		Repo: postgres.NewSearchRepository(db, categoryConfigs), YouTube: ytRepo, Guard: quotaGuard,
+		Cache: searchcache.New(upstashClient), Deduper: searchcache.NewHitDeduper(upstashClient),
+		CategoryRepo: categoryRepo, CategoryConfigs: categoryConfigs, Countries: countries,
+	})
+	searchHandler := http.NewSearchHandler(searchUsecase)
 
 	apiLogRepo := postgres.NewApiLogRepository(db)
 
@@ -74,6 +95,7 @@ func main() {
 
 	go worker.StartYouTubeSync(songUsecase, workerLogRepo, workerSettings.MusicSyncIntervalMinutes, countries)
 	go worker.StartApiLogCleanup(apiLogRepo)
+	go worker.StartSearchVideoRefresh(searchUsecase, workerLogRepo)
 	go worker.StartVideoCategorySync(categoryUsecase, workerLogRepo, workerSettings.CategorySyncIntervalMinutes, countries)
 	go worker.StartCategoryVideoResumeWorker(
 		categoryRepo, categoryVideoUsecases, workerLogRepo, categoryConfigs,
@@ -88,7 +110,8 @@ func main() {
 	}
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: corsAllowOrigins,
-		AllowMethods: "GET,POST",
+		AllowMethods: "GET,POST,PATCH,PUT,DELETE",
+		AllowHeaders: "Authorization,Content-Type",
 	}))
 	app.Use(requestid.New())
 	app.Use(apilog.New(apiLogRepo))
@@ -129,6 +152,10 @@ func main() {
 
 	contactRateLimit := ratelimit.New(5, 10*time.Minute).FailClosed().Middleware()
 	app.Post("/contact", contactRateLimit, contactHandler.SubmitContact)
+
+	http.RegisterSearchRoutes(app, searchHandler, authUsecase, trendsRateLimit)
+
+	http.RegisterAuthRoutes(app, authUsecase, playlistUsecase, ratelimit.New(10, time.Minute).Named("auth").Middleware())
 
 	SetupSwaggerRoutes(app)
 

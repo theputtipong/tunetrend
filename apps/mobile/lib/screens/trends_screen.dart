@@ -24,8 +24,13 @@ enum _MenuAction { replayTour, language, theme, about }
 
 class TrendsScreen extends StatefulWidget {
   final String initialCountry;
+  final ValueChanged<String>? onCountryChanged;
 
-  const TrendsScreen({super.key, required this.initialCountry});
+  const TrendsScreen({
+    super.key,
+    required this.initialCountry,
+    this.onCountryChanged,
+  });
 
   @override
   State<TrendsScreen> createState() => _TrendsScreenState();
@@ -53,7 +58,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
   late Future<List<Song>> _songsFuture = _load();
 
   Future<List<Song>> _load() {
-    final categoryId = _tab == TrendTab.musicVideos ? '' : _category;
+    final categoryId = _tab == TrendTab.musicVideos || _tab == TrendTab.searched
+        ? ''
+        : _category;
     return _api.fetchSongs(_country, _tab, categoryId: categoryId);
   }
 
@@ -95,6 +102,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
       _songsFuture = _load();
     });
     _loadCategories();
+    widget.onCountryChanged?.call(code);
     AnalyticsService().logCountryChanged(code);
   }
 
@@ -110,7 +118,8 @@ class _TrendsScreenState extends State<TrendsScreen> {
     if (categoryId == _category) return;
     setState(() {
       _category = categoryId;
-      if (categoryId.isNotEmpty && _tab == TrendTab.musicVideos) {
+      if (categoryId.isNotEmpty &&
+          (_tab == TrendTab.musicVideos || _tab == TrendTab.searched)) {
         _tab = TrendTab.trending;
       }
       _songsFuture = _load();
@@ -286,6 +295,20 @@ class _TrendsScreenState extends State<TrendsScreen> {
               ),
             ),
             Divider(height: 1, color: AppColors.border),
+            if (_tab == TrendTab.searched)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    t.searchedTabCaption,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ),
+              ),
             Expanded(
               child: RefreshIndicator(
                 color: AppColors.accent,

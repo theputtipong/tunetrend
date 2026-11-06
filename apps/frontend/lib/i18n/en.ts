@@ -2,6 +2,7 @@ export const en = {
   nav: {
     countryLabel: "Country",
     syncNote: "Refreshes every 3 hours",
+    searchedSyncNote: "Updates every 5 minutes",
     about: "About TuneTrend",
     themeToggle: "Toggle light/dark theme",
     languageToggle: "Switch language",
@@ -11,11 +12,20 @@ export const en = {
     musicCategory: "Music",
     privacy: "Privacy Policy",
     getApp: "Get the TuneTrend app",
+    searchPlaceholder: "Search songs, artists…",
+    searchLabel: "Search",
+    login: "Sign in",
+    accountMenu: "Account menu",
+    myPlaylists: "My playlists",
+    logout: "Sign out",
+    deleteAccount: "Delete account",
+    newBadge: "New",
   },
   tabs: {
     trending: "Trending",
     new: "New Releases",
     mv: "Music Videos",
+    searched: "Most Searched",
   },
   countryPageTitle: (countryName: string) => `Trending in ${countryName} · TuneTrend`,
   songList: {
@@ -63,6 +73,116 @@ export const en = {
     autoAdvanceCountdown: (secondsLeft: number) => `Playing next in ${secondsLeft}s…`,
     autoPlayStoppedMessage: "Continuous play stopped — you switched tabs.",
     discoverHeading: "Explore other categories",
+  },
+  searched: {
+    hint: "Songs people in this country searched for and played the most in the last 7 days",
+    searches: (n: string) => `${n} searches`,
+    rankUp: (n: number) => `▲ ${n}`,
+    rankDown: (n: number) => `▼ ${n}`,
+    isNew: "New",
+    emptyTitle: "Nothing searched yet",
+    emptyDescription:
+      "This chart fills up as people search and play songs. Try searching for a song you love.",
+  },
+  search: {
+    metaTitle: (q: string) => `"${q}" · TuneTrend search`,
+    promptTitle: "Search TuneTrend",
+    promptDescription: "Type at least 2 characters to search songs and artists.",
+    chartSection: "In TuneTrend charts",
+    chartCount: (n: number, countryName: string) => `${n} results · ${countryName}`,
+    chartRankBadge: (rank: number, tabLabel: string) => `#${rank} ${tabLabel}`,
+    searchedBefore: "Searched before",
+    noLocalTitle: "Not in our charts yet",
+    noLocalDescription: "Nothing in the TuneTrend charts matches this search.",
+    errorTitle: "Search failed",
+    errorDescription: "We couldn't reach the TuneTrend service. Please try again.",
+    youtubeSection: "From YouTube",
+    loading: "Loading…",
+    ctaTitle: "Can't find what you're looking for?",
+    ctaBody: "Keep searching on YouTube. What you find is saved so others can find it faster too.",
+    ctaButton: "Search more on YouTube",
+    remaining: (n: number) => `${n} left today`,
+    loginTitle: "Sign in to keep searching on YouTube",
+    loginBody: "Chart search still works as usual. YouTube search is for members only.",
+    loginButton: "Sign in with Google",
+    quotaTitle: "YouTube search is temporarily unavailable",
+    quotaBody: (time: string) =>
+      `So many people searched today that the quota ran out. It'll be back around ${time}. You can still search the TuneTrend charts meanwhile.`,
+    userLimitTitle: "You've used all your YouTube searches today",
+    userLimitBody: "You can search again tomorrow, or try our charts first.",
+    unavailableTitle: "YouTube search isn't available right now",
+    unavailableBody: "Please try again later. Chart search still works as usual.",
+    youtubeErrorTitle: "YouTube search failed",
+    youtubeErrorBody: "Something went wrong while contacting YouTube. Please try again.",
+    retry: "Try again",
+    youtubeEmpty: "No results on YouTube.",
+  },
+  auth: {
+    defaultTitle: "Sign in to TuneTrend",
+    defaultBody: "Create your own playlists and search more on YouTube. Works on both web and app.",
+    playlistTitle: "Save songs for later",
+    playlistBody: "Sign in with Google to create your own playlists. Works on both web and app.",
+    youtubeTitle: "Sign in to keep searching on YouTube",
+    youtubeBody: "Chart search still works as usual. YouTube search is for members only.",
+    finePrint:
+      "We only keep your name, email and profile picture. Nothing is ever posted to your YouTube.",
+    privacyLink: "Privacy Policy",
+    loadingGoogle: "Loading Google sign-in…",
+    loginFailed: "Sign-in failed. Please try again.",
+    close: "Close",
+    cancel: "Cancel",
+    deleteTitle: "Delete your account?",
+    deleteBody:
+      "Your account and all of your playlists will be permanently deleted. This can't be undone.",
+    deleteConfirm: "Delete account",
+    deleteFailed: "Couldn't delete your account. Please try again.",
+    deleteSessionExpired: "Your session has expired. Please sign in again to delete your account.",
+  },
+  playlist: {
+    addButton: "Save to playlist",
+    popoverTitle: "Save to playlist",
+    newPlaceholder: "New playlist name",
+    create: "Create",
+    loading: "Loading…",
+    noPlaylists: "No playlists yet — create one below.",
+    errorLimit: "You've reached the limit of 50 playlists.",
+    errorItemLimit: "This playlist is full (200 songs).",
+    errorName: "Name must be 1–60 characters.",
+    errorGeneric: "Couldn't save. Please try again.",
+    metaTitle: "My playlists · TuneTrend",
+    heading: "My playlists",
+    newPlaylist: "+ New playlist",
+    songCount: (n: number) => `${n} ${n === 1 ? "song" : "songs"}`,
+    privateBadge: "Private playlist",
+    updated: (rel: string) => `Last edited ${rel}`,
+    playAll: "▶ Play all",
+    shuffle: "Shuffle",
+    rename: "Rename",
+    delete: "Delete",
+    save: "Save",
+    cancel: "Cancel",
+    nameLabel: "Playlist name",
+    deleteTitle: "Delete this playlist?",
+    deleteBody: (name: string) => `"${name}" and all songs in it will be deleted.`,
+    removeItem: "Remove from playlist",
+    moveUp: "Move up",
+    moveDown: "Move down",
+    dragHandle: "Drag to reorder",
+    unavailableTitle: "This video is no longer available",
+    unavailableBody: "Removed or made private on YouTube",
+    skipOnPlay: "Skipped when playing",
+    emptyTitle: "No songs in this playlist yet",
+    emptyBody: "Tap + on any song to add it here.",
+    listEmptyTitle: "No playlists yet",
+    listEmptyBody: "Create your first playlist, then tap + on songs you love.",
+    loginTitle: "Sign in to see your playlists",
+    loginBody: "Playlists are saved to your Google-linked TuneTrend account.",
+    notFoundTitle: "Playlist not found",
+    notFoundBody: "It may have been deleted.",
+    backToList: "← My playlists",
+    backToCharts: "← Back to charts",
+    playingFrom: (name: string) => `Playing from ${name}`,
+    actionFailed: "Something went wrong. Please try again.",
   },
   installPrompt: {
     title: "Get the TuneTrend app",
@@ -126,12 +246,13 @@ export const en = {
     backToTrends: "← Back to trends",
     eyebrow: "Legal",
     heading: "Privacy Policy",
-    lastUpdated: "Last updated: August 29, 2026",
+    lastUpdated: "Last updated: November 6, 2026",
     intro:
       'TuneTrend (the "app", "we", "us") is a small, independently-run project that shows ' +
       "trending YouTube music and videos by country, available as a website and as Android/iOS " +
       "apps. This page explains what data we collect, why, and how you're in control of it. " +
-      "There are no user accounts on TuneTrend — nothing here requires a login.",
+      "Browsing charts and searching them never requires a login. Signing in with Google is " +
+      "optional and only needed to create playlists or to search further on YouTube.",
     sections: [
       {
         heading: "Information we collect",
@@ -157,6 +278,23 @@ export const en = {
         ],
       },
       {
+        heading: "Your account and playlists (only if you sign in)",
+        body: [
+          "If you choose to sign in with Google, we receive and store your Google account " +
+            "name, email address and profile picture URL, plus an internal account ID and the " +
+            "time you last signed in. We never get your Google password and never ask for " +
+            "access to your YouTube account — nothing is ever posted to YouTube on your behalf.",
+          "Playlists you create are stored on TuneTrend's own server: each playlist's name and, " +
+            "for each saved song, its YouTube video ID, title, channel name and thumbnail link. " +
+            "Playlists are private to your account and are not shared with anyone.",
+          "On the web, your sign-in session is kept in a secure, HTTP-only cookie that expires " +
+            "after 30 days. To limit costs, we also count how many YouTube searches each account " +
+            "makes per day.",
+          "When you play a song from the search results page, we count that play (video ID, " +
+            "country and search term — not who you are) to build the Most Searched chart.",
+        ],
+      },
+      {
         heading: "YouTube playback",
         body: [
           "Every video on TuneTrend plays through YouTube's official embedded player " +
@@ -173,6 +311,7 @@ export const en = {
           "Google Firebase (Analytics, Crashlytics, Cloud Messaging, Remote Config, " +
             "Performance Monitoring) — mobile app infrastructure.",
           "YouTube / Google — video playback and chart data (via the YouTube Data API).",
+          "Google Sign-In — optional sign-in; shares your name, email and profile picture with us.",
           "Vercel (Analytics, Speed Insights, hosting) — web app infrastructure.",
           "Resend — delivers the email notification when you submit the Contact form.",
           "Upstash — short-lived rate-limiting counters keyed by IP address.",
@@ -192,7 +331,8 @@ export const en = {
         body: [
           "Contact form messages are kept only as long as needed to respond to you. Analytics, " +
             "crash, and performance data follow Firebase's and Vercel's own default retention " +
-            "periods. Rate-limiting counters expire automatically within minutes.",
+            "periods. Rate-limiting counters expire automatically within minutes. Your account " +
+            "details and playlists are kept until you delete your account.",
         ],
       },
       {
@@ -208,10 +348,12 @@ export const en = {
         body: [
           "You can disable push notifications at any time in your device's system settings. " +
             "You can clear your saved theme/language preferences by clearing your browser's " +
-            "site data or the app's storage. Because there's no account system, there's no " +
-            "personal profile to delete — the only data we hold that identifies you at all is " +
-            "whatever you voluntarily typed into the Contact form, and you can ask us to delete " +
-            "it the same way: through that form.",
+            "site data or the app's storage.",
+          "Deleting your account: sign in, open the profile menu (your picture at the top " +
+            'right) and choose "Delete account". Your account and all of your playlists are ' +
+            "permanently deleted right away. Signing out only ends the session on that device. " +
+            "If you can't sign in any more, ask us through the Contact form and we'll delete it " +
+            "for you, along with anything you typed into that form.",
         ],
       },
       {

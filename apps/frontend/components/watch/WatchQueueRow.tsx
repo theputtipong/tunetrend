@@ -14,9 +14,10 @@ export const WatchQueueRow = forwardRef<
     rank: number;
     lang: Lang;
     isPlaying: boolean;
+    unavailable?: boolean;
     onSelect: () => void;
   }>
->(function WatchQueueRow({ song, rank, lang, isPlaying, onSelect }, ref) {
+>(function WatchQueueRow({ song, rank, lang, isPlaying, unavailable = false, onSelect }, ref) {
   const views = formatViewCount(song.viewCount, lang);
   const time = formatRelativeTime(song.publishedAt, lang);
 
@@ -26,18 +27,22 @@ export const WatchQueueRow = forwardRef<
       type="button"
       onClick={onSelect}
       disabled={isPlaying}
-      className="row relative w-full appearance-none border-0 bg-transparent text-left"
+      className={`row relative w-full appearance-none border-0 bg-transparent text-left ${
+        unavailable && !isPlaying ? "row--unavailable" : ""
+      }`}
     >
       <span className="rank w-5 flex-shrink-0 text-[15px]">{String(rank).padStart(2, "0")}</span>
 
       <span className="thumb relative h-[47px] w-[84px] flex-shrink-0 overflow-hidden md:h-[63px] md:w-[112px]">
-        <Image
-          src={song.thumbnailUrl}
-          alt=""
-          fill
-          sizes="(min-width: 768px) 112px, 84px"
-          className="object-cover"
-        />
+        {song.thumbnailUrl ? (
+          <Image
+            src={song.thumbnailUrl}
+            alt=""
+            fill
+            sizes="(min-width: 768px) 112px, 84px"
+            className="object-cover"
+          />
+        ) : null}
         {!isPlaying && (
           <span className="thumb-play absolute inset-0 flex items-center justify-center bg-black/0 transition-colors">
             <PlayIcon size={16} />
@@ -48,12 +53,14 @@ export const WatchQueueRow = forwardRef<
       <div className="min-w-0 flex-1">
         <div className="title">{song.title}</div>
         <div className="channel">{song.channelTitle}</div>
-        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-          <VideoTypeBadge videoType={song.videoType} />
-          <span className="text-[11.5px] text-[var(--text-3)]">
-            {views} · {time}
-          </span>
-        </div>
+        {song.viewCount ? (
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <VideoTypeBadge videoType={song.videoType} />
+            <span className="text-[11.5px] text-[var(--text-3)]">
+              {views} · {time}
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {isPlaying && (

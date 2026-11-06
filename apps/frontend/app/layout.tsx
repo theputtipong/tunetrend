@@ -5,6 +5,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getLang } from "@/lib/i18n/server";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { getCurrentUser } from "@/lib/session";
 import "./globals.css";
 
 // "swap" re-wraps Thai paragraphs that contain Latin words once the webfont loads, causing CLS.
@@ -45,6 +47,7 @@ try {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const lang = await getLang();
+  const user = await getCurrentUser();
   return (
     <html
       lang={lang}
@@ -55,7 +58,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full">
-        {children}
+        <AuthProvider initialUser={user} lang={lang}>
+          {children}
+        </AuthProvider>
         <Analytics />
         <SpeedInsights />
         <ServiceWorkerRegister />

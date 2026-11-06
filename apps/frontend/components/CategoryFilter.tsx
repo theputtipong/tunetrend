@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { categoryLabel } from "@/lib/categories";
-import type { TabKey } from "@/lib/tabs";
+import type { PageTabKey } from "@/lib/tabs";
 import { dictionaries, type Lang } from "@/lib/i18n";
 import type { Category } from "@/types/category";
 
@@ -12,7 +12,7 @@ export function CategoryFilter({
   lang,
 }: Readonly<{
   country: string;
-  tab: TabKey;
+  tab: PageTabKey;
   active: string;
   categories: Category[];
   lang: Lang;
@@ -26,7 +26,7 @@ export function CategoryFilter({
     >
       {options.map((cat) => {
         const isActive = cat.id === active;
-        const targetTab = cat.id && tab === "mv" ? "trending" : tab;
+        const targetTab = cat.id && (tab === "mv" || tab === "searched") ? "trending" : tab;
         const href = cat.id
           ? `/${country}?tab=${targetTab}&category=${cat.id}`
           : `/${country}?tab=${tab}`;

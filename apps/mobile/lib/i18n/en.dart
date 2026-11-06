@@ -16,6 +16,25 @@ String _shareMessage(String title, String url, String? appUrl) {
   return appUrl == null ? base : '$base\nGet the app: $appUrl';
 }
 
+String _searchHits(String n) => '$n searches';
+String _youtubeRemaining(int remaining, int limit) =>
+    '$remaining/$limit left today';
+String _youtubeQuotaExhausted(String? time) => time == null
+    ? 'Lots of searches today used up the quota. Chart search still works as usual.'
+    : 'Lots of searches today used up the quota. It should be back around $time. Chart search still works as usual.';
+String _youtubeUnavailable(String? time) => time == null
+    ? 'Please try again later. Chart search still works as usual.'
+    : 'Please try again around $time. Chart search still works as usual.';
+String _youtubeUserLimit(int limit) =>
+    "You've searched YouTube $limit times today. Try again tomorrow, or search our charts first.";
+String _playlistSongCount(int n) => n == 1 ? '1 song' : '$n songs';
+String _playlistNameInvalid(int max) => 'Name must be 1–$max characters';
+String _deletePlaylistBody(String name) =>
+    'Delete "$name" and all its songs. This can\'t be undone.';
+String _saveToPlaylistTitle(String title) => 'Save "$title" to…';
+String _savedToPlaylist(String name) => 'Saved to $name';
+String _alreadyInPlaylist(String name) => 'Already in $name';
+
 const enStrings = AppStrings(
   aboutTooltip: 'About TuneTrend',
   themeToggleTooltip: 'Toggle light/dark theme',
@@ -142,4 +161,76 @@ const enStrings = AppStrings(
   supportDevelopment: 'Support our development',
   replayTourTooltip: 'Show me around again',
   privacyPolicy: 'Privacy Policy',
+  navCharts: 'Charts',
+  navSearch: 'Search',
+  navPlaylists: 'Playlists',
+  tabSearched: 'Most Searched',
+  searchedTabCaption: 'Songs people in this country searched for and played most in the last 7 days',
+  newBadge: 'New',
+  searchHits: _searchHits,
+  searchHint: 'Search songs, artists…',
+  recentSearches: 'Recent:',
+  clearSearchTooltip: 'Clear',
+  searchPromptTitle: 'Find a song',
+  searchPromptDescription:
+      'Search TuneTrend charts instantly, no sign-in needed.',
+  searchQueryTooShort: 'Type at least 2 characters',
+  localSectionTitle: 'In charts',
+  localEmpty: 'Not found in TuneTrend charts',
+  searchedBefore: 'Searched before',
+  youtubeSectionTitle: 'From YouTube',
+  youtubeMoreHint: 'Can\'t find it? Search YouTube too. Results are saved so others find them faster.',
+  youtubeSearchButton: 'Search more on YouTube',
+  youtubeRemaining: _youtubeRemaining,
+  youtubeLoading: 'Loading…',
+  youtubeEmpty: 'No results on YouTube',
+  youtubeLoginTitle: 'Sign in to search YouTube',
+  youtubeLoginDescription:
+      'Chart search still works as usual. YouTube search is for members only.',
+  signInWithGoogle: 'Sign in with Google',
+  loginUnavailable: 'Login is temporarily unavailable. Please try again.',
+  videoUnavailable: 'Video no longer available',
+  signInFailed: 'Couldn\'t sign in. Please try again.',
+  youtubeUnavailableTitle: 'YouTube search is temporarily unavailable',
+  youtubeQuotaExhausted: _youtubeQuotaExhausted,
+  youtubeUnavailable: _youtubeUnavailable,
+  youtubeUserLimitTitle: 'You\'ve used today\'s YouTube searches',
+  youtubeUserLimit: _youtubeUserLimit,
+  youtubeErrorTitle: 'Couldn\'t search YouTube',
+  youtubeErrorDescription: 'Something went wrong. Please try again.',
+  playlistsTitle: 'My playlists',
+  playlistSongCount: _playlistSongCount,
+  newPlaylist: 'New playlist',
+  createNewPlaylist: 'New playlist',
+  playlistNameLabel: 'Playlist name',
+  playlistNameInvalid: _playlistNameInvalid,
+  create: 'Create',
+  save: 'Save',
+  cancel: 'Cancel',
+  delete: 'Delete',
+  playlistsEmptyTitle: 'No playlists yet',
+  playlistsEmptyDescription: 'Tap + on any song to save it for later.',
+  playlistItemsEmpty: 'No songs in this playlist yet',
+  playlistPrivate: 'Private playlist',
+  playAll: 'Play all',
+  rename: 'Rename',
+  deletePlaylistTitle: 'Delete this playlist?',
+  deletePlaylistBody: _deletePlaylistBody,
+  removeFromPlaylist: 'Remove',
+  addToPlaylistTooltip: 'Save to playlist',
+  saveToPlaylistTitle: _saveToPlaylistTitle,
+  savedToPlaylist: _savedToPlaylist,
+  alreadyInPlaylist: _alreadyInPlaylist,
+  actionFailed: 'Something went wrong. Please try again.',
+  loginPromptTitle: 'Save songs for later',
+  loginPromptDescription: 'Sign in with Google to create your own playlists. Works on both web and app.',
+  continueWithGoogle: 'Continue with Google',
+  loginPrivacyNote: 'We only keep your name, email and profile photo. Nothing is posted to your YouTube.',
+  accountMenuTooltip: 'Account',
+  signOut: 'Sign out',
+  deleteAccount: 'Delete account',
+  deleteAccountTitle: 'Delete your account?',
+  deleteAccountBody:
+      'Your account and all your playlists will be permanently deleted.',
+  accountDeleted: 'Account deleted',
 );

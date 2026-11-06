@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { dictionaries, type Lang } from "@/lib/i18n";
 import { resolveCategory } from "@/lib/categories";
-import { resolveTab } from "@/lib/tabs";
+import { resolvePageTab } from "@/lib/tabs";
 import type { Category } from "@/types/category";
 import { CategoryFilter } from "./CategoryFilter";
 import { Header } from "./Header";
@@ -16,12 +16,12 @@ export function NavBar({
   categories,
 }: Readonly<{ country: string; lang: Lang; categories: Category[] }>) {
   const searchParams = useSearchParams();
-  const tab = resolveTab(searchParams.get("tab"));
+  const tab = resolvePageTab(searchParams.get("tab"));
   const category = resolveCategory(searchParams.get("category"), categories);
 
   return (
     <>
-      <Header activeCountry={country} tab={tab} lang={lang} />
+      <Header activeCountry={country} countrySuffix={`?tab=${tab}`} lang={lang} />
       <CategoryFilter
         country={country.toLowerCase()}
         tab={tab}
@@ -31,7 +31,11 @@ export function NavBar({
       />
       <div className="tabbar flex items-center justify-between px-4 md:px-8">
         <TrendTabs country={country.toLowerCase()} active={tab} category={category} lang={lang} />
-        <span className="sync-note hidden sm:inline">{dictionaries[lang].nav.syncNote}</span>
+        <span className="sync-note hidden flex-shrink-0 pl-4 lg:inline">
+          {tab === "searched"
+            ? dictionaries[lang].nav.searchedSyncNote
+            : dictionaries[lang].nav.syncNote}
+        </span>
       </div>
       <OnboardingTour lang={lang} />
     </>

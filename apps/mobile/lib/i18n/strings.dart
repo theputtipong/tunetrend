@@ -104,6 +104,76 @@ class AppStrings {
   final String replayTourTooltip;
   final String privacyPolicy;
 
+  final String navCharts;
+  final String navSearch;
+  final String navPlaylists;
+  final String tabSearched;
+  final String searchedTabCaption;
+  final String newBadge;
+  final String Function(String n) searchHits;
+  final String searchHint;
+  final String recentSearches;
+  final String clearSearchTooltip;
+  final String searchPromptTitle;
+  final String searchPromptDescription;
+  final String searchQueryTooShort;
+  final String localSectionTitle;
+  final String localEmpty;
+  final String searchedBefore;
+  final String youtubeSectionTitle;
+  final String youtubeMoreHint;
+  final String youtubeSearchButton;
+  final String Function(int remaining, int limit) youtubeRemaining;
+  final String youtubeLoading;
+  final String youtubeEmpty;
+  final String youtubeLoginTitle;
+  final String youtubeLoginDescription;
+  final String signInWithGoogle;
+  final String signInFailed;
+  final String loginUnavailable;
+  final String videoUnavailable;
+  final String youtubeUnavailableTitle;
+  final String Function(String? time) youtubeQuotaExhausted;
+  final String Function(String? time) youtubeUnavailable;
+  final String youtubeUserLimitTitle;
+  final String Function(int limit) youtubeUserLimit;
+  final String youtubeErrorTitle;
+  final String youtubeErrorDescription;
+  final String playlistsTitle;
+  final String Function(int n) playlistSongCount;
+  final String newPlaylist;
+  final String createNewPlaylist;
+  final String playlistNameLabel;
+  final String Function(int max) playlistNameInvalid;
+  final String create;
+  final String save;
+  final String cancel;
+  final String delete;
+  final String playlistsEmptyTitle;
+  final String playlistsEmptyDescription;
+  final String playlistItemsEmpty;
+  final String playlistPrivate;
+  final String playAll;
+  final String rename;
+  final String deletePlaylistTitle;
+  final String Function(String name) deletePlaylistBody;
+  final String removeFromPlaylist;
+  final String addToPlaylistTooltip;
+  final String Function(String title) saveToPlaylistTitle;
+  final String Function(String name) savedToPlaylist;
+  final String Function(String name) alreadyInPlaylist;
+  final String actionFailed;
+  final String loginPromptTitle;
+  final String loginPromptDescription;
+  final String continueWithGoogle;
+  final String loginPrivacyNote;
+  final String accountMenuTooltip;
+  final String signOut;
+  final String deleteAccount;
+  final String deleteAccountTitle;
+  final String deleteAccountBody;
+  final String accountDeleted;
+
   const AppStrings({
     required this.aboutTooltip,
     required this.themeToggleTooltip,
@@ -189,5 +259,74 @@ class AppStrings {
     required this.supportDevelopment,
     required this.replayTourTooltip,
     required this.privacyPolicy,
+    required this.navCharts,
+    required this.navSearch,
+    required this.navPlaylists,
+    required this.tabSearched,
+    required this.searchedTabCaption,
+    required this.newBadge,
+    required this.searchHits,
+    required this.searchHint,
+    required this.recentSearches,
+    required this.clearSearchTooltip,
+    required this.searchPromptTitle,
+    required this.searchPromptDescription,
+    required this.searchQueryTooShort,
+    required this.localSectionTitle,
+    required this.localEmpty,
+    required this.searchedBefore,
+    required this.youtubeSectionTitle,
+    required this.youtubeMoreHint,
+    required this.youtubeSearchButton,
+    required this.youtubeRemaining,
+    required this.youtubeLoading,
+    required this.youtubeEmpty,
+    required this.youtubeLoginTitle,
+    required this.youtubeLoginDescription,
+    required this.signInWithGoogle,
+    required this.signInFailed,
+    required this.loginUnavailable,
+    required this.videoUnavailable,
+    required this.youtubeUnavailableTitle,
+    required this.youtubeQuotaExhausted,
+    required this.youtubeUnavailable,
+    required this.youtubeUserLimitTitle,
+    required this.youtubeUserLimit,
+    required this.youtubeErrorTitle,
+    required this.youtubeErrorDescription,
+    required this.playlistsTitle,
+    required this.playlistSongCount,
+    required this.newPlaylist,
+    required this.createNewPlaylist,
+    required this.playlistNameLabel,
+    required this.playlistNameInvalid,
+    required this.create,
+    required this.save,
+    required this.cancel,
+    required this.delete,
+    required this.playlistsEmptyTitle,
+    required this.playlistsEmptyDescription,
+    required this.playlistItemsEmpty,
+    required this.playlistPrivate,
+    required this.playAll,
+    required this.rename,
+    required this.deletePlaylistTitle,
+    required this.deletePlaylistBody,
+    required this.removeFromPlaylist,
+    required this.addToPlaylistTooltip,
+    required this.saveToPlaylistTitle,
+    required this.savedToPlaylist,
+    required this.alreadyInPlaylist,
+    required this.actionFailed,
+    required this.loginPromptTitle,
+    required this.loginPromptDescription,
+    required this.continueWithGoogle,
+    required this.loginPrivacyNote,
+    required this.accountMenuTooltip,
+    required this.signOut,
+    required this.deleteAccount,
+    required this.deleteAccountTitle,
+    required this.deleteAccountBody,
+    required this.accountDeleted,
   });
 }

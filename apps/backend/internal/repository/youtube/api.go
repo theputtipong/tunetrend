@@ -15,22 +15,27 @@ import (
 
 var httpClient = &http.Client{Timeout: 10 * time.Second}
 
-const apiKeyHeader = "X-goog-api-key"
+const (
+	apiKeyHeader   = "X-goog-api-key"
+	defaultBaseURL = "https://www.googleapis.com/youtube/v3"
+)
 
 type youtubeRepository struct {
-	apiKey string
+	apiKey  string
+	baseURL string
 }
 
 func NewYouTubeRepository() domain.YouTubeRepository {
 	return &youtubeRepository{
-		apiKey: os.Getenv("YOUTUBE_API_KEY"),
+		apiKey:  os.Getenv("YOUTUBE_API_KEY"),
+		baseURL: defaultBaseURL,
 	}
 }
 
 func (r *youtubeRepository) FetchTrending(countryCode string) ([]domain.Song, error) {
 	url := fmt.Sprintf(
-		"https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,id&chart=mostPopular&videoCategoryId=10&regionCode=%s&maxResults=50",
-		countryCode,
+		"%s/videos?part=snippet,statistics,id&chart=mostPopular&videoCategoryId=10&regionCode=%s&maxResults=50",
+		r.baseURL, countryCode,
 	)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -94,8 +99,8 @@ func (r *youtubeRepository) FetchTrending(countryCode string) ([]domain.Song, er
 
 func (r *youtubeRepository) FetchVideoCategories(countryCode string) ([]domain.VideoCategory, error) {
 	url := fmt.Sprintf(
-		"https://www.googleapis.com/youtube/v3/videoCategories?part=snippet&regionCode=%s",
-		countryCode,
+		"%s/videoCategories?part=snippet&regionCode=%s",
+		r.baseURL, countryCode,
 	)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -144,8 +149,8 @@ func (r *youtubeRepository) FetchVideoCategories(countryCode string) ([]domain.V
 
 func (r *youtubeRepository) FetchTrendingByCategory(countryCode, categoryID string) ([]domain.CategoryVideo, error) {
 	url := fmt.Sprintf(
-		"https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,id&chart=mostPopular&videoCategoryId=%s&regionCode=%s&maxResults=50",
-		categoryID, countryCode,
+		"%s/videos?part=snippet,statistics,id&chart=mostPopular&videoCategoryId=%s&regionCode=%s&maxResults=50",
+		r.baseURL, categoryID, countryCode,
 	)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import YouTube, { type YouTubePlayer, type YouTubeEvent } from "react-youtube";
 import { dictionaries, type Lang } from "@/lib/i18n";
@@ -10,13 +11,21 @@ import type { CountryCode } from "@/lib/countries";
 import { countryLabel } from "@/lib/countries";
 import type { Song } from "@/types/song";
 import type { DiscoverItem } from "@/types/discover";
+import {
+  markVideoUnavailable,
+  readUnavailableVideos,
+  subscribeUnavailable,
+  toPlaylistVideo,
+} from "@/lib/playlist";
 import { StateMessage } from "../StateMessage";
+import { AddToPlaylistButton } from "../playlist/AddToPlaylistButton";
 import { AutoPlayPromptDialog } from "./AutoPlayPromptDialog";
 import { DiscoverCarousel } from "./DiscoverCarousel";
 import { ViewCountNoticeButton } from "./ViewCountNoticeButton";
 import { WatchQueueRow } from "./WatchQueueRow";
 
 const AUTO_PLAY_DELAY_SECONDS = 5;
+const UNPLAYABLE_ERROR_CODES = new Set([100, 101, 150]);
 
 export function WatchPageClient({
   country,
@@ -24,18 +33,22 @@ export function WatchPageClient({
   lang,
   videoId: initialVideoId,
   title: initialTitle,
+  channelTitle: initialChannelTitle,
   categoryId: initialCategoryId,
   initialSongs,
   discoverItems,
+  playlist,
 }: Readonly<{
   country: CountryCode;
   tab: TabKey;
   lang: Lang;
   videoId: string;
   title: string;
+  channelTitle: string;
   categoryId: string;
   initialSongs: Song[];
   discoverItems: DiscoverItem[];
+  playlist?: { id: string; name: string };
 }>) {
   const router = useRouter();
   const t = dictionaries[lang].watch;
@@ -48,7 +61,13 @@ export function WatchPageClient({
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [relatedError, setRelatedError] = useState(false);
 
-  const [autoPlayChoice, setAutoPlayChoice] = useState<boolean | null>(null);
+  const [autoPlayChoice, setAutoPlayChoice] = useState<boolean | null>(playlist ? true : null);
+  const unavailableRaw = useSyncExternalStore(
+    subscribeUnavailable,
+    readUnavailableVideos,
+    () => "",
+  );
+  const unavailable = new Set(unavailableRaw.split(",").filter(Boolean));
   const [showAutoPlayPrompt, setShowAutoPlayPrompt] = useState(false);
   const [autoAdvanceSecondsLeft, setAutoAdvanceSecondsLeft] = useState<number | null>(null);
   const [copiedFeedback, setCopiedFeedback] = useState(false);
@@ -62,9 +81,10 @@ export function WatchPageClient({
 
   const updateUrl = useCallback(
     (nextVideoId: string, nextTab: TabKey) => {
-      window.history.replaceState(null, "", `/${country}/watch/${nextVideoId}?tab=${nextTab}`);
+      const query = playlist ? `playlist=${playlist.id}` : `tab=${nextTab}`;
+      window.history.replaceState(null, "", `/${country}/watch/${nextVideoId}?${query}`);
     },
-    [country],
+    [country, playlist],
   );
 
   const loadRelated = useCallback(
@@ -100,28 +120,38 @@ export function WatchPageClient({
     void loadRelated(nextTab);
   }
 
-  const advanceToNext = useCallback(async () => {
-    if (songs.length === 0) return;
-    const currentIndex = songs.findIndex((s) => s.id === videoId);
-    const next = currentIndex === -1 ? songs[0] : songs[currentIndex + 1];
-    if (!next) return;
+  const advanceToNext = useCallback(
+    async (immediate = false) => {
+      if (songs.length === 0) return;
+      const skip = new Set(readUnavailableVideos().split(",").filter(Boolean));
+      const currentIndex = songs.findIndex((s) => s.id === videoId);
+      const next = songs
+        .slice(currentIndex + 1)
+        .find((s) => !playlist || (!skip.has(s.id) && s.title !== ""));
+      if (!next) return;
 
-    const generation = autoPlayGenerationRef.current;
-    for (let secondsLeft = AUTO_PLAY_DELAY_SECONDS; secondsLeft > 0; secondsLeft--) {
+      const generation = autoPlayGenerationRef.current;
+      for (
+        let secondsLeft = immediate ? 0 : AUTO_PLAY_DELAY_SECONDS;
+        secondsLeft > 0;
+        secondsLeft--
+      ) {
+        if (generation !== autoPlayGenerationRef.current) return;
+        setAutoAdvanceSecondsLeft(secondsLeft);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
       if (generation !== autoPlayGenerationRef.current) return;
-      setAutoAdvanceSecondsLeft(secondsLeft);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-    if (generation !== autoPlayGenerationRef.current) return;
 
-    setVideoId(next.id);
-    setTitle(next.title);
-    setCategoryId(next.categoryId);
-    setAutoAdvanceSecondsLeft(null);
-    handledEndRef.current = false;
-    playerRef.current?.loadVideoById(next.id);
-    updateUrl(next.id, relatedTab);
-  }, [songs, videoId, relatedTab, updateUrl]);
+      setVideoId(next.id);
+      setTitle(next.title);
+      setCategoryId(next.categoryId);
+      setAutoAdvanceSecondsLeft(null);
+      handledEndRef.current = false;
+      playerRef.current?.loadVideoById(next.id);
+      updateUrl(next.id, relatedTab);
+    },
+    [songs, videoId, relatedTab, updateUrl, playlist],
+  );
 
   function selectSong(song: Song) {
     if (song.id === videoId) return;
@@ -137,6 +167,15 @@ export function WatchPageClient({
 
   function onPlayerReady(event: YouTubeEvent) {
     playerRef.current = event.target;
+  }
+
+  function onPlayerError(event: YouTubeEvent<number>) {
+    if (!UNPLAYABLE_ERROR_CODES.has(event.data)) return;
+    markVideoUnavailable(videoId);
+    if (playlist && !handledEndRef.current) {
+      handledEndRef.current = true;
+      void advanceToNext(true);
+    }
   }
 
   async function onPlayerStateChange(event: YouTubeEvent<number>) {
@@ -160,7 +199,7 @@ export function WatchPageClient({
     if (window.history.length > 1) {
       router.back();
     } else {
-      router.push(`/${country}?tab=${relatedTab}`);
+      router.push(playlist ? `/me/playlists/${playlist.id}` : `/${country}?tab=${relatedTab}`);
     }
   }
 
@@ -198,6 +237,17 @@ export function WatchPageClient({
           <div className="min-w-0 flex-1 truncate text-[14.5px] font-semibold text-[var(--text)]">
             {title}
           </div>
+          {title ? (
+            <AddToPlaylistButton
+              video={toPlaylistVideo({
+                id: videoId,
+                title,
+                channelTitle:
+                  songs.find((s) => s.id === videoId)?.channelTitle ?? initialChannelTitle,
+                thumbnailUrl: songs.find((s) => s.id === videoId)?.thumbnailUrl,
+              })}
+            />
+          ) : null}
           <button
             type="button"
             onClick={handleShare}
@@ -222,6 +272,7 @@ export function WatchPageClient({
               iframeClassName="h-full w-full"
               onReady={onPlayerReady}
               onStateChange={onPlayerStateChange}
+              onError={onPlayerError}
             />
           </div>
 
@@ -239,18 +290,26 @@ export function WatchPageClient({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col bg-[var(--bg)] md:col-start-2 md:row-start-1 md:h-full">
-        <div className="flex gap-6 px-4 pt-3.5">
-          {visibleTabs.map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => selectRelatedTab(key)}
-              className={key === relatedTab ? "tab tab--active" : "tab"}
-            >
-              {dictionaries[lang].tabs[key]}
-            </button>
-          ))}
-        </div>
+        {playlist ? (
+          <div className="px-4 pt-3.5">
+            <Link href={`/me/playlists/${playlist.id}`} className="tab tab--active block truncate">
+              {dictionaries[lang].playlist.playingFrom(playlist.name)}
+            </Link>
+          </div>
+        ) : (
+          <div className="flex gap-6 px-4 pt-3.5">
+            {visibleTabs.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => selectRelatedTab(key)}
+                className={key === relatedTab ? "tab tab--active" : "tab"}
+              >
+                {dictionaries[lang].tabs[key]}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="mt-3 border-t border-[var(--border)]" />
 
         <div className="flex-1 overflow-y-auto px-2 py-2">
@@ -283,6 +342,7 @@ export function WatchPageClient({
                   rank={index + 1}
                   lang={lang}
                   isPlaying={isPlaying}
+                  unavailable={Boolean(playlist) && (unavailable.has(song.id) || song.title === "")}
                   onSelect={() => selectSong(song)}
                 />
               );

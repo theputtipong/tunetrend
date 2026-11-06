@@ -4,7 +4,8 @@ const kMusicCategoryId = '10';
 enum TrendTab {
   trending('trending', '/trends'),
   newReleases('new', '/trends/new'),
-  musicVideos('mv', '/trends/mv');
+  musicVideos('mv', '/trends/mv'),
+  searched('searched', '/trends/searched');
 
   final String key;
   final String endpointPath;

@@ -29,3 +29,16 @@ export function formatRelativeTime(iso: string, lang: Lang = "en"): string {
   const diffWeeks = Math.round(diffDays / 7);
   return t.weeksAgo(diffWeeks);
 }
+
+export function formatCompactNumber(n: number): string {
+  return Number.isFinite(n) ? compactViews.format(n) : "0";
+}
+
+export function formatLocalTime(iso: string, lang: Lang): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString(lang === "th" ? "th-TH" : "en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}

@@ -15,6 +15,101 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/google": {
+            "post": {
+                "description": "ตรวจ Google ID token แล้วออก session JWT (HS256 อายุ 30 วัน) สร้าง user ใหม่ถ้ายังไม่เคย login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "เข้าสู่ระบบด้วย Google",
+                "parameters": [
+                    {
+                        "description": "Google ID token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.GoogleLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "token และข้อมูล user",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "token ไม่ถูกต้องหรือหมดอายุ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "429": {
+                        "description": "ส่งคำขอถี่เกินไป",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "503": {
+                        "description": "ตรวจ token กับ Google ไม่ได้ชั่วคราว (auth_unavailable)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/categories": {
+            "get": {
+                "description": "คืนค่าหมวดหมู่ที่ is_active=true (แอดมินเปิดใช้งานแล้ว) และมีตารางวิดีโอ sync ไว้จริง สำหรับใช้เป็นค่า category ใน /trends",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "ดึงรายการหมวดหมู่ที่ใช้กรอง /trends ได้",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "รหัสประเทศ (Default: TH)",
+                        "name": "country",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "คืนค่ารายการหมวดหมู่",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/contact": {
             "post": {
                 "description": "รับข้อความจากผู้ใช้พร้อมช่องทางติดต่อกลับ (อีเมลหรือเบอร์โทรไทย) บันทึกลงฐานข้อมูลและส่งอีเมลแจ้งเตือนผู้พัฒนา",
@@ -35,7 +130,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ContactRequest"
+                            "$ref": "#/definitions/http.ContactRequest"
                         }
                     }
                 ],
@@ -71,6 +166,669 @@ const docTemplate = `{
                 }
             }
         },
+        "/discover": {
+            "get": {
+                "description": "คืนค่าวิดีโอฮิตสุด 1-2 รายการต่อหมวดหมู่ รวมทุกประเทศ ไม่ซ้ำกัน",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Discover"
+                ],
+                "summary": "ดึงรายการแนะนำหมวดหมู่อื่นๆ สำหรับ carousel",
+                "responses": {
+                    "200": {
+                        "description": "คืนค่ารายการแนะนำ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "ข้อมูลผู้ใช้ที่ login อยู่",
+                "responses": {
+                    "200": {
+                        "description": "ข้อมูล user",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "ยังไม่ login",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "ลบบัญชีพร้อม playlist ทั้งหมด",
+                "responses": {
+                    "200": {
+                        "description": "ลบบัญชีแล้ว",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "ยังไม่ login",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/me/playlists": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "รายการ playlist ของฉัน",
+                "responses": {
+                    "200": {
+                        "description": "รายการ playlist พร้อม itemCount",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "ยังไม่ login",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "สร้าง playlist",
+                "parameters": [
+                    {
+                        "description": "ชื่อ playlist (1-60 ตัวอักษร)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.PlaylistNameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "playlist ที่สร้าง",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "422": {
+                        "description": "ชื่อไม่ถูกต้องหรือเกิน 50 playlist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/me/playlists/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "playlist พร้อมรายการเพลงเรียงตามลำดับ",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "playlist id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "playlist และ items",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "ไม่พบ playlist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "ลบ playlist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "playlist id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ลบแล้ว",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "ไม่พบ playlist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "แก้ชื่อ playlist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "playlist id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ชื่อใหม่",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.PlaylistNameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "playlist ที่แก้แล้ว",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "ไม่พบ playlist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "422": {
+                        "description": "ชื่อไม่ถูกต้อง",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/me/playlists/{id}/items": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "เพิ่มเพลงลง playlist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "playlist id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ข้อมูลเพลง (snapshot)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.PlaylistItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "item ที่เพิ่ม",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "ไม่พบ playlist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "มีเพลงนี้ใน playlist แล้ว",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "422": {
+                        "description": "ข้อมูลไม่ถูกต้องหรือเกิน 200 เพลง",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/me/playlists/{id}/items/{videoId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "ลบเพลงออกจาก playlist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "playlist id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "YouTube video id",
+                        "name": "videoId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ลบแล้ว",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "ไม่พบ playlist หรือเพลง",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/me/playlists/{id}/order": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "videoIds ต้องมีเพลงทุกเพลงใน playlist ครบและไม่ซ้ำ",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "จัดลำดับเพลงใน playlist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "playlist id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ลำดับใหม่",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.PlaylistOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "playlist พร้อมลำดับใหม่",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "ไม่พบ playlist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "422": {
+                        "description": "videoIds ไม่ตรงกับเพลงใน playlist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "description": "ค้นจาก songs (หมวดเพลง) หรือตารางของหมวดนั้น รวมกับ search_videos ไม่เรียก YouTube",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "ค้นหาวิดีโอในชาร์ต TuneTrend",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "คำค้น 2-100 ตัวอักษร",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "รหัสประเทศ (Default: TH)",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "รหัสหมวดหมู่ (Default: 10)",
+                        "name": "category",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/search/hit": {
+            "post": {
+                "description": "นับได้ 1 ครั้ง/IP/วิดีโอ/ชม.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "นับการกดเล่นจากหน้าผลค้นหา",
+                "parameters": [
+                    {
+                        "description": "videoId, country, q",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.recordHitRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/search/youtube": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ใช้แคช 24 ชม. ก่อน แล้วตรวจสิทธิ์ต่อคนและโควตาระบบ error: user_limit | quota_exhausted | search_unavailable พร้อม retryAt",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "ค้นหาเพิ่มบน YouTube (ต้อง login)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "คำค้น 2-100 ตัวอักษร",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "รหัสประเทศ (Default: TH)",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "รหัสหมวดหมู่ (Default: 10)",
+                        "name": "category",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/trends": {
             "get": {
                 "description": "ดึงข้อมูลเพลงเทรนด์ดิ้งตามรหัสประเทศ (เช่น TH, US) จากฐานข้อมูล",
@@ -90,11 +848,24 @@ const docTemplate = `{
                         "description": "รหัสประเทศ (Default: TH)",
                         "name": "country",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "รหัสหมวดหมู่ย่อย (เช่น 20=Gaming, 24=Entertainment) ไม่ระบุ = เพลงฮิตรวม",
+                        "name": "category",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "คืนค่ารายการเพลงฮิต",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "ระบุหมวดหมู่ที่ไม่รู้จัก",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -161,11 +932,60 @@ const docTemplate = `{
                         "description": "รหัสประเทศ (Default: TH)",
                         "name": "country",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "รหัสหมวดหมู่ย่อย (เช่น 20=Gaming, 24=Entertainment) ไม่ระบุ = เพลงใหม่รวม",
+                        "name": "category",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "คืนค่ารายการเพลงใหม่",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "ระบุหมวดหมู่ที่ไม่รู้จัก",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/trends/searched": {
+            "get": {
+                "description": "อันดับวิดีโอหมวดเพลงตามจำนวนการกดเล่นจากหน้าค้นหาใน 7 วัน (ไม่เกิน 30) พร้อมการเปลี่ยนอันดับเทียบ 7 วันก่อนหน้า",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Songs"
+                ],
+                "summary": "มาแรงจากการค้นหา",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "รหัสประเทศ (Default: TH)",
+                        "name": "country",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -176,7 +996,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "internal_delivery_http.ContactRequest": {
+        "http.ContactRequest": {
             "type": "object",
             "properties": {
                 "contactEmail": {
@@ -192,7 +1012,64 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "website": {
-                    "description": "Website คือ honeypot field — ต้องซ่อนไว้ฝั่ง client (CSS/aria-hidden)\nผู้ใช้จริงต้องไม่มีทางกรอกค่านี้ ถ้ามีค่าแปลว่าเป็นบอท",
+                    "type": "string"
+                }
+            }
+        },
+        "http.GoogleLoginRequest": {
+            "type": "object",
+            "properties": {
+                "idToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "http.PlaylistItemRequest": {
+            "type": "object",
+            "properties": {
+                "channelTitle": {
+                    "type": "string"
+                },
+                "thumbnailUrl": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "videoId": {
+                    "type": "string"
+                }
+            }
+        },
+        "http.PlaylistNameRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "http.PlaylistOrderRequest": {
+            "type": "object",
+            "properties": {
+                "videoIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "http.recordHitRequest": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "type": "string"
+                },
+                "q": {
+                    "type": "string"
+                },
+                "videoId": {
                     "type": "string"
                 }
             }

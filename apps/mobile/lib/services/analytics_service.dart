@@ -40,6 +40,52 @@ class AnalyticsService {
     });
   }
 
+  Future<void> logSearchPerformed({
+    required String query,
+    required String countryCode,
+    required String categoryId,
+    required int resultCount,
+  }) {
+    return _log('search_performed', {
+      'query_length': query.trim().length,
+      'country_code': countryCode,
+      'category_id': categoryId,
+      'result_count': resultCount,
+    });
+  }
+
+  Future<void> logYouTubeSearch({
+    required String query,
+    required String countryCode,
+    required String categoryId,
+    required String outcome,
+    int resultCount = 0,
+    bool cached = false,
+  }) {
+    return _log('youtube_search', {
+      'query_length': query.trim().length,
+      'country_code': countryCode,
+      'category_id': categoryId,
+      'outcome': outcome,
+      'result_count': resultCount,
+      'cached': cached ? 1 : 0,
+    });
+  }
+
+  Future<void> logPlaylistCreated({required String source}) {
+    return _log('playlist_created', {'source': source});
+  }
+
+  Future<void> logVideoAddedToPlaylist({
+    required String videoId,
+    required String source,
+  }) {
+    return _log('video_added_to_playlist', {
+      'video_id': videoId,
+      'source': source,
+    });
+  }
+
   Future<void> _log(String name, Map<String, Object> parameters) async {
     try {
       await _analytics.logEvent(name: name, parameters: parameters);

@@ -6,7 +6,8 @@ import '../constants/onboarding.dart';
 import '../constants/theme.dart';
 import '../i18n/lang.dart';
 import '../services/analytics_service.dart';
-import 'trends_screen.dart';
+import '../services/auth_service.dart';
+import 'home_shell.dart';
 
 class TuneTrendApp extends StatefulWidget {
   const TuneTrendApp({super.key});
@@ -26,6 +27,7 @@ class _TuneTrendAppState extends State<TuneTrendApp>
     LangController.instance.addListener(_onLangChanged);
     LangController.instance.load();
     OnboardingController.instance.load();
+    AuthService.instance.restore();
   }
 
   @override
@@ -62,7 +64,7 @@ class _TuneTrendAppState extends State<TuneTrendApp>
       theme: buildAppTheme(brightness),
       navigatorObservers: [AnalyticsService().observer],
       builder: (context, child) => ShowCaseWidget(builder: (context) => child!),
-      home: TrendsScreen(initialCountry: initialCountry),
+      home: HomeShell(initialCountry: initialCountry),
     );
   }
 }

@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  internal_delivery_http.ContactRequest:
+  http.ContactRequest:
     properties:
       contactEmail:
         type: string
@@ -11,9 +11,43 @@ definitions:
       name:
         type: string
       website:
-        description: |-
-          Website คือ honeypot field — ต้องซ่อนไว้ฝั่ง client (CSS/aria-hidden)
-          ผู้ใช้จริงต้องไม่มีทางกรอกค่านี้ ถ้ามีค่าแปลว่าเป็นบอท
+        type: string
+    type: object
+  http.GoogleLoginRequest:
+    properties:
+      idToken:
+        type: string
+    type: object
+  http.PlaylistItemRequest:
+    properties:
+      channelTitle:
+        type: string
+      thumbnailUrl:
+        type: string
+      title:
+        type: string
+      videoId:
+        type: string
+    type: object
+  http.PlaylistNameRequest:
+    properties:
+      name:
+        type: string
+    type: object
+  http.PlaylistOrderRequest:
+    properties:
+      videoIds:
+        items:
+          type: string
+        type: array
+    type: object
+  http.recordHitRequest:
+    properties:
+      country:
+        type: string
+      q:
+        type: string
+      videoId:
         type: string
     type: object
 host: localhost:8080
@@ -23,6 +57,72 @@ info:
   title: TuneTrend API
   version: "1.0"
 paths:
+  /auth/google:
+    post:
+      consumes:
+        - application/json
+      description: ตรวจ Google ID token แล้วออก session JWT (HS256 อายุ 30 วัน) สร้าง
+        user ใหม่ถ้ายังไม่เคย login
+      parameters:
+        - description: Google ID token
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/http.GoogleLoginRequest"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: token และข้อมูล user
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: token ไม่ถูกต้องหรือหมดอายุ
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: ส่งคำขอถี่เกินไป
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: ตรวจ token กับ Google ไม่ได้ชั่วคราว (auth_unavailable)
+          schema:
+            additionalProperties: true
+            type: object
+      summary: เข้าสู่ระบบด้วย Google
+      tags:
+        - Auth
+  /categories:
+    get:
+      consumes:
+        - application/json
+      description: คืนค่าหมวดหมู่ที่ is_active=true (แอดมินเปิดใช้งานแล้ว) และมีตารางวิดีโอ
+        sync ไว้จริง สำหรับใช้เป็นค่า category ใน /trends
+      parameters:
+        - description: "รหัสประเทศ (Default: TH)"
+          in: query
+          name: country
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: คืนค่ารายการหมวดหมู่
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: เกิดข้อผิดพลาดที่เซิร์ฟเวอร์
+          schema:
+            additionalProperties: true
+            type: object
+      summary: ดึงรายการหมวดหมู่ที่ใช้กรอง /trends ได้
+      tags:
+        - Categories
   /contact:
     post:
       consumes:
@@ -35,7 +135,7 @@ paths:
           name: request
           required: true
           schema:
-            $ref: "#/definitions/internal_delivery_http.ContactRequest"
+            $ref: "#/definitions/http.ContactRequest"
       produces:
         - application/json
       responses:
@@ -62,6 +162,441 @@ paths:
       summary: ส่งข้อความติดต่อถึงผู้พัฒนา
       tags:
         - Contact
+  /discover:
+    get:
+      consumes:
+        - application/json
+      description: คืนค่าวิดีโอฮิตสุด 1-2 รายการต่อหมวดหมู่ รวมทุกประเทศ ไม่ซ้ำกัน
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: คืนค่ารายการแนะนำ
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: เกิดข้อผิดพลาดที่เซิร์ฟเวอร์
+          schema:
+            additionalProperties: true
+            type: object
+      summary: ดึงรายการแนะนำหมวดหมู่อื่นๆ สำหรับ carousel
+      tags:
+        - Discover
+  /me:
+    delete:
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: ลบบัญชีแล้ว
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: ยังไม่ login
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: ลบบัญชีพร้อม playlist ทั้งหมด
+      tags:
+        - Auth
+    get:
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: ข้อมูล user
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: ยังไม่ login
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: ข้อมูลผู้ใช้ที่ login อยู่
+      tags:
+        - Auth
+  /me/playlists:
+    get:
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: รายการ playlist พร้อม itemCount
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: ยังไม่ login
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: รายการ playlist ของฉัน
+      tags:
+        - Playlists
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - description: ชื่อ playlist (1-60 ตัวอักษร)
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/http.PlaylistNameRequest"
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: playlist ที่สร้าง
+          schema:
+            additionalProperties: true
+            type: object
+        "422":
+          description: ชื่อไม่ถูกต้องหรือเกิน 50 playlist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: สร้าง playlist
+      tags:
+        - Playlists
+  /me/playlists/{id}:
+    delete:
+      parameters:
+        - description: playlist id
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: ลบแล้ว
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: ไม่พบ playlist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: ลบ playlist
+      tags:
+        - Playlists
+    get:
+      parameters:
+        - description: playlist id
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: playlist และ items
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: ไม่พบ playlist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: playlist พร้อมรายการเพลงเรียงตามลำดับ
+      tags:
+        - Playlists
+    patch:
+      consumes:
+        - application/json
+      parameters:
+        - description: playlist id
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: ชื่อใหม่
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/http.PlaylistNameRequest"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: playlist ที่แก้แล้ว
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: ไม่พบ playlist
+          schema:
+            additionalProperties: true
+            type: object
+        "422":
+          description: ชื่อไม่ถูกต้อง
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: แก้ชื่อ playlist
+      tags:
+        - Playlists
+  /me/playlists/{id}/items:
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - description: playlist id
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: ข้อมูลเพลง (snapshot)
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/http.PlaylistItemRequest"
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: item ที่เพิ่ม
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: ไม่พบ playlist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: มีเพลงนี้ใน playlist แล้ว
+          schema:
+            additionalProperties: true
+            type: object
+        "422":
+          description: ข้อมูลไม่ถูกต้องหรือเกิน 200 เพลง
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: เพิ่มเพลงลง playlist
+      tags:
+        - Playlists
+  /me/playlists/{id}/items/{videoId}:
+    delete:
+      parameters:
+        - description: playlist id
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: YouTube video id
+          in: path
+          name: videoId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: ลบแล้ว
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: ไม่พบ playlist หรือเพลง
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: ลบเพลงออกจาก playlist
+      tags:
+        - Playlists
+  /me/playlists/{id}/order:
+    put:
+      consumes:
+        - application/json
+      description: videoIds ต้องมีเพลงทุกเพลงใน playlist ครบและไม่ซ้ำ
+      parameters:
+        - description: playlist id
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: ลำดับใหม่
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/http.PlaylistOrderRequest"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: playlist พร้อมลำดับใหม่
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: ไม่พบ playlist
+          schema:
+            additionalProperties: true
+            type: object
+        "422":
+          description: videoIds ไม่ตรงกับเพลงใน playlist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: จัดลำดับเพลงใน playlist
+      tags:
+        - Playlists
+  /search:
+    get:
+      description: ค้นจาก songs (หมวดเพลง) หรือตารางของหมวดนั้น รวมกับ search_videos
+        ไม่เรียก YouTube
+      parameters:
+        - description: คำค้น 2-100 ตัวอักษร
+          in: query
+          name: q
+          required: true
+          type: string
+        - description: "รหัสประเทศ (Default: TH)"
+          in: query
+          name: country
+          type: string
+        - description: "รหัสหมวดหมู่ (Default: 10)"
+          in: query
+          name: category
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            additionalProperties: true
+            type: object
+      summary: ค้นหาวิดีโอในชาร์ต TuneTrend
+      tags:
+        - Search
+  /search/hit:
+    post:
+      consumes:
+        - application/json
+      description: นับได้ 1 ครั้ง/IP/วิดีโอ/ชม.
+      parameters:
+        - description: videoId, country, q
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/http.recordHitRequest"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: นับการกดเล่นจากหน้าผลค้นหา
+      tags:
+        - Search
+  /search/youtube:
+    get:
+      description: "ใช้แคช 24 ชม. ก่อน แล้วตรวจสิทธิ์ต่อคนและโควตาระบบ error: user_limit
+        | quota_exhausted | search_unavailable พร้อม retryAt"
+      parameters:
+        - description: คำค้น 2-100 ตัวอักษร
+          in: query
+          name: q
+          required: true
+          type: string
+        - description: "รหัสประเทศ (Default: TH)"
+          in: query
+          name: country
+          type: string
+        - description: "รหัสหมวดหมู่ (Default: 10)"
+          in: query
+          name: category
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: ค้นหาเพิ่มบน YouTube (ต้อง login)
+      tags:
+        - Search
   /trends:
     get:
       consumes:
@@ -72,11 +607,21 @@ paths:
           in: query
           name: country
           type: string
+        - description: รหัสหมวดหมู่ย่อย (เช่น 20=Gaming, 24=Entertainment) ไม่ระบุ =
+            เพลงฮิตรวม
+          in: query
+          name: category
+          type: string
       produces:
         - application/json
       responses:
         "200":
           description: คืนค่ารายการเพลงฮิต
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ระบุหมวดหมู่ที่ไม่รู้จัก
           schema:
             additionalProperties: true
             type: object
@@ -120,6 +665,11 @@ paths:
           in: query
           name: country
           type: string
+        - description: รหัสหมวดหมู่ย่อย (เช่น 20=Gaming, 24=Entertainment) ไม่ระบุ =
+            เพลงใหม่รวม
+          in: query
+          name: category
+          type: string
       produces:
         - application/json
       responses:
@@ -128,7 +678,37 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "400":
+          description: ระบุหมวดหมู่ที่ไม่รู้จัก
+          schema:
+            additionalProperties: true
+            type: object
       summary: ดึงเพลงฮิตมาใหม่ (ไม่เกิน 7 วัน)
+      tags:
+        - Songs
+  /trends/searched:
+    get:
+      description: อันดับวิดีโอหมวดเพลงตามจำนวนการกดเล่นจากหน้าค้นหาใน 7 วัน (ไม่เกิน
+        30) พร้อมการเปลี่ยนอันดับเทียบ 7 วันก่อนหน้า
+      parameters:
+        - description: "รหัสประเทศ (Default: TH)"
+          in: query
+          name: country
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: มาแรงจากการค้นหา
       tags:
         - Songs
 swagger: "2.0"

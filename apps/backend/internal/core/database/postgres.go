@@ -25,6 +25,11 @@ var reservedTableNames = map[string]bool{
 	"video_categories":       true,
 	"category_video_configs": true,
 	"worker_settings":        true,
+	"search_videos":          true,
+	"search_hits":            true,
+	"users":                  true,
+	"playlists":              true,
+	"playlist_items":         true,
 }
 
 func Connect() (*gorm.DB, []domain.CategoryVideoConfig, domain.WorkerSettings) {
@@ -64,6 +69,7 @@ func Connect() (*gorm.DB, []domain.CategoryVideoConfig, domain.WorkerSettings) {
 	err = db.AutoMigrate(
 		&domain.Song{}, &domain.WorkerLog{}, &domain.ContactMessage{}, &domain.ApiLog{}, &domain.VideoCategory{},
 		&domain.CategoryVideoConfig{}, &domain.WorkerSettings{},
+		&domain.SearchVideo{}, &domain.SearchHit{}, &domain.User{}, &domain.Playlist{}, &domain.PlaylistItem{},
 	)
 	if err != nil {
 		log.Fatalf("❌ ล้มเหลวในการ Auto Migrate: %v", err)

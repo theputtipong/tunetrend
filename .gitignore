@@ -49,4 +49,4 @@ node_modules/
 !/README.md
 tmp/
 .claude/
-docs/
+/docs/

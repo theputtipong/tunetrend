@@ -17,6 +17,25 @@ String _shareMessage(String title, String url, String? appUrl) {
   return appUrl == null ? base : '$base\nดาวน์โหลดแอป: $appUrl';
 }
 
+String _searchHits(String n) => '$n ค้นหา';
+String _youtubeRemaining(int remaining, int limit) =>
+    'เหลือ $remaining/$limit ครั้งวันนี้';
+String _youtubeQuotaExhausted(String? time) => time == null
+    ? 'วันนี้มีคนค้นเยอะจนโควตาเต็ม ระหว่างนี้ยังค้นในชาร์ต TuneTrend ได้ตามปกติ'
+    : 'วันนี้มีคนค้นเยอะจนโควตาเต็ม จะกลับมาประมาณ $time น. ระหว่างนี้ยังค้นในชาร์ต TuneTrend ได้ตามปกติ';
+String _youtubeUnavailable(String? time) => time == null
+    ? 'ลองใหม่อีกครั้งภายหลัง ระหว่างนี้ยังค้นในชาร์ต TuneTrend ได้ตามปกติ'
+    : 'ลองใหม่อีกครั้งประมาณ $time น. ระหว่างนี้ยังค้นในชาร์ต TuneTrend ได้ตามปกติ';
+String _youtubeUserLimit(int limit) =>
+    'วันนี้ค้นบน YouTube ครบ $limit ครั้งแล้ว พรุ่งนี้ค้นได้อีก หรือลองค้นในชาร์ตของเราดูก่อน';
+String _playlistSongCount(int n) => '$n เพลง';
+String _playlistNameInvalid(int max) => 'ชื่อต้องยาว 1–$max ตัวอักษร';
+String _deletePlaylistBody(String name) =>
+    'ลบ "$name" และเพลงทั้งหมดในนั้น กู้คืนไม่ได้';
+String _saveToPlaylistTitle(String title) => 'บันทึก "$title" ลงใน…';
+String _savedToPlaylist(String name) => 'บันทึกลง $name แล้ว';
+String _alreadyInPlaylist(String name) => 'มีเพลงนี้ใน $name แล้ว';
+
 const thStrings = AppStrings(
   aboutTooltip: 'เกี่ยวกับ TuneTrend',
   themeToggleTooltip: 'สลับธีมสว่าง/มืด',
@@ -131,4 +150,76 @@ const thStrings = AppStrings(
   supportDevelopment: 'สนับสนุนการพัฒนาแอปนี้',
   replayTourTooltip: 'ดูแนะนำการใช้งานระบบอีกครั้ง',
   privacyPolicy: 'นโยบายความเป็นส่วนตัว',
+  navCharts: 'ชาร์ต',
+  navSearch: 'ค้นหา',
+  navPlaylists: 'Playlist',
+  tabSearched: 'มาแรงจากการค้นหา',
+  searchedTabCaption: 'เพลงที่คนในประเทศนี้ค้นหาแล้วกดเล่นมากที่สุดใน 7 วัน',
+  newBadge: 'ใหม่',
+  searchHits: _searchHits,
+  searchHint: 'ค้นหาเพลง ศิลปิน…',
+  recentSearches: 'ค้นหาล่าสุด:',
+  clearSearchTooltip: 'ล้าง',
+  searchPromptTitle: 'ค้นหาเพลงที่อยากฟัง',
+  searchPromptDescription: 'ค้นในชาร์ต TuneTrend ได้ทันทีโดยไม่ต้องเข้าสู่ระบบ',
+  searchQueryTooShort: 'พิมพ์อย่างน้อย 2 ตัวอักษร',
+  localSectionTitle: 'ในชาร์ต',
+  localEmpty: 'ไม่พบในชาร์ต TuneTrend',
+  searchedBefore: 'เคยถูกค้นหา',
+  youtubeSectionTitle: 'จาก YouTube',
+  youtubeMoreHint: 'ยังไม่เจอเพลงที่หา? ค้นต่อบน YouTube ได้ ผลที่เจอจะถูกเก็บไว้ให้คนอื่นค้นเจอเร็วขึ้นด้วย',
+  youtubeSearchButton: 'ค้นหาเพิ่มบน YouTube',
+  youtubeRemaining: _youtubeRemaining,
+  youtubeLoading: 'กำลังโหลด…',
+  youtubeEmpty: 'ไม่พบผลบน YouTube',
+  youtubeLoginTitle: 'เข้าสู่ระบบเพื่อค้นต่อบน YouTube',
+  youtubeLoginDescription:
+      'ผลในระบบยังค้นได้ตามปกติ การค้นบน YouTube เปิดให้เฉพาะสมาชิก',
+  signInWithGoogle: 'เข้าสู่ระบบด้วย Google',
+  loginUnavailable: 'ระบบ login ขัดข้องชั่วคราว ลองใหม่อีกครั้ง',
+  videoUnavailable: 'วิดีโอนี้ไม่พร้อมใช้งานแล้ว',
+  signInFailed: 'เข้าสู่ระบบไม่สำเร็จ ลองใหม่อีกครั้ง',
+  youtubeUnavailableTitle: 'ค้นบน YouTube ใช้ไม่ได้ชั่วคราว',
+  youtubeQuotaExhausted: _youtubeQuotaExhausted,
+  youtubeUnavailable: _youtubeUnavailable,
+  youtubeUserLimitTitle: 'วันนี้ค้นบน YouTube ครบแล้ว',
+  youtubeUserLimit: _youtubeUserLimit,
+  youtubeErrorTitle: 'ค้นบน YouTube ไม่สำเร็จ',
+  youtubeErrorDescription: 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง',
+  playlistsTitle: 'Playlist ของฉัน',
+  playlistSongCount: _playlistSongCount,
+  newPlaylist: 'Playlist ใหม่',
+  createNewPlaylist: 'สร้าง playlist ใหม่',
+  playlistNameLabel: 'ชื่อ playlist',
+  playlistNameInvalid: _playlistNameInvalid,
+  create: 'สร้าง',
+  save: 'บันทึก',
+  cancel: 'ยกเลิก',
+  delete: 'ลบ',
+  playlistsEmptyTitle: 'ยังไม่มี playlist',
+  playlistsEmptyDescription: 'กด + บนเพลงที่ชอบเพื่อเก็บไว้ฟังทีหลัง',
+  playlistItemsEmpty: 'ยังไม่มีเพลงใน playlist นี้',
+  playlistPrivate: 'Playlist ส่วนตัว',
+  playAll: 'เล่นทั้งหมด',
+  rename: 'แก้ชื่อ',
+  deletePlaylistTitle: 'ลบ playlist นี้?',
+  deletePlaylistBody: _deletePlaylistBody,
+  removeFromPlaylist: 'เอาออก',
+  addToPlaylistTooltip: 'บันทึกลง playlist',
+  saveToPlaylistTitle: _saveToPlaylistTitle,
+  savedToPlaylist: _savedToPlaylist,
+  alreadyInPlaylist: _alreadyInPlaylist,
+  actionFailed: 'ทำรายการไม่สำเร็จ ลองใหม่อีกครั้ง',
+  loginPromptTitle: 'เก็บเพลงไว้ฟังทีหลัง',
+  loginPromptDescription: 'เข้าสู่ระบบด้วย Google เพื่อสร้าง playlist ของคุณเอง ใช้ได้ทั้งบนเว็บและแอป',
+  continueWithGoogle: 'ดำเนินการต่อด้วย Google',
+  loginPrivacyNote:
+      'เราเก็บแค่ชื่อ อีเมล และรูปโปรไฟล์ ไม่มีการโพสต์อะไรลง YouTube ของคุณ',
+  accountMenuTooltip: 'บัญชี',
+  signOut: 'ออกจากระบบ',
+  deleteAccount: 'ลบบัญชี',
+  deleteAccountTitle: 'ลบบัญชีถาวร?',
+  deleteAccountBody:
+      'บัญชีและ playlist ทั้งหมดของคุณจะถูกลบถาวรและกู้คืนไม่ได้',
+  accountDeleted: 'ลบบัญชีแล้ว',
 );

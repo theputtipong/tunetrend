@@ -5,6 +5,8 @@ import '../i18n/lang.dart';
 
 final NumberFormat _compactViews = NumberFormat.compact(locale: 'en_US');
 
+String compactNumber(num n) => _compactViews.format(n);
+
 String formatViewCount(String viewCount, AppLang lang) {
   final n = num.tryParse(viewCount);
   final suffix = dictionaries[lang]!.viewsSuffix;

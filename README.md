@@ -25,10 +25,15 @@
 ### ฟีเจอร์หลัก (ทุก Platform)
 
 - **ชาร์ตตามประเทศ**: ไทย (TH), เกาหลีใต้ (KR), ญี่ปุ่น (JP), สหรัฐอเมริกา (US), สหราชอาณาจักร (GB)
-- **3 แท็บสำหรับหมวดเพลง**
+- **4 แท็บสำหรับหมวดเพลง**
   - **Trending**: เพลงยอดนิยม เรียงตามยอดวิว (สูงสุด 30 อันดับ)
   - **New Releases**: เพลงที่ปล่อยภายใน 7 วัน
   - **Music Videos**: เฉพาะคลิปที่ระบบจัดว่าเป็น Official MV
+  - **มาแรงจากการค้นหา (Most Searched)**: เพลงที่คนในประเทศนั้นค้นหาแล้วกดเล่นมากที่สุดใน 7 วัน (สูงสุด 30 อันดับ)
+- **ค้นหา**: ค้นในชาร์ตที่ระบบมีอยู่ได้ทันทีโดยไม่ต้อง login (หมวดเพลงเป็นค่าเริ่มต้น เลือกหมวดอื่นได้) และค้นต่อบน YouTube ได้เมื่อ login แล้ว ระบบค้นบน YouTube ให้อัตโนมัติเมื่อผลในชาร์ตน้อยกว่า 5 รายการ ผลที่ได้จะถูกเก็บไว้ให้คนถัดไปค้นเจอในระบบ
+  - จำกัดการค้นบน YouTube คนละ 10 ครั้ง/วัน (ผลจากแคช 24 ชม. ไม่นับ)
+  - เมื่อ quota ของ YouTube ทั้งระบบในวันนั้นถึง 9,000 units ระบบจะปิดการค้นบน YouTube จนถึงเที่ยงคืนเวลาแปซิฟิก แสดงข้อความแจ้งผู้ใช้ และส่งอีเมลแจ้งผู้ดูแลวันละ 1 ฉบับ ส่วน worker ที่ซิงก์ชาร์ตยังทำงานตามปกติ
+- **Login ด้วย Google** และ **Playlist ส่วนตัว**: สร้างได้ 50 playlist ต่อคน playlist ละไม่เกิน 200 เพลง แก้ชื่อ ลบ จัดลำดับ และเล่นต่อเนื่องทั้ง playlist ได้ ลบบัญชีพร้อม playlist ทั้งหมดได้จากเมนูบัญชี
 - **ตัวกรองหมวดหมู่**: 13 หมวดของ YouTube (Gaming, Entertainment, Sports, Comedy ฯลฯ) มีแท็บ Trending และ New Releases เปิด/ปิดแยกรายประเทศได้ และระบบซ่อนหมวดที่ดึงข้อมูลไม่สำเร็จให้อัตโนมัติ
 - **ป้ายประเภทวิดีโอ**: MV, Lyric, Audio Track, Cover, Live Performance, General
 - **เล่นวิดีโอในแอป** ผ่าน YouTube embedded player อย่างเป็นทางการ ยอดวิวและรายได้ของครีเอเตอร์นับตามปกติ
@@ -94,6 +99,8 @@
 | แชร์วิดีโอ                             |   ✅    |       ✅*        |      ✅      | ✅ (clipboard fallback) |
 | ไทย / อังกฤษ, ธีมสว่าง/มืด, Onboarding |   ✅    |       ✅*        |      ✅      |           ✅            |
 | ฟอร์มติดต่อ                            |   ✅    |       ✅*        |      ✅      |           ✅            |
+| ค้นหา + แท็บมาแรงจากการค้นหา           |   ✅    |       ✅*        |      ✅      |           ✅            |
+| Login Google + Playlist                |   ✅    |        ❌        |      ✅      |           ✅            |
 | Discover carousel                      |   ❌    |        ❌        |      ❌      |           ✅            |
 | URL แยกต่อหน้า (deep link / bookmark)  |   ❌    |        ❌        |      ✅      |           ✅            |
 | Push notification                      |   ✅    |       ✅*        |      ❌      |           ❌            |
@@ -112,7 +119,7 @@
                          ▲  (worker ดึงตามรอบเวลา)
 ┌──────────────┐   REST  │                        SQL
 │ Mobile app   │────────▶ Backend (Go / Fiber) ─────────▶ PostgreSQL
-│ Flutter      │         │  - REST API (อ่านอย่างเดียว + contact)
+│ Flutter      │         │  - REST API (ชาร์ต, ค้นหา, login, playlist)
 └──────┬───────┘         │  - background workers
        │ Firebase        │  - rate limit (Upstash Redis)
        ▼                 │  - อีเมลแจ้งเตือน (Resend)
@@ -121,7 +128,7 @@
                Web (Next.js บน Vercel) ◀──── Browser / PWA
 ```
 
-- Backend **ไม่ได้เรียก YouTube ตอนมี request เข้ามา** แต่อ่านจากฐานข้อมูลที่ worker ซิงก์ไว้ล่วงหน้า จึงตอบเร็วและประหยัด quota
+- Backend **ไม่ได้เรียก YouTube ตอนมี request เข้ามา** แต่อ่านจากฐานข้อมูลที่ worker ซิงก์ไว้ล่วงหน้า จึงตอบเร็วและประหยัด quota ยกเว้น `/search/youtube` ที่ผู้ใช้ login แล้วสั่งค้นเอง ซึ่งมีแคชและเพดาน quota กำกับ
 - เว็บเรียก backend จากฝั่ง server เท่านั้น URL ของ backend จึงไม่ไปถึงเบราว์เซอร์
 - แอปมือถือเรียก backend ตรง โดยกำหนด URL ตอน build ด้วย `--dart-define`
 - Backend แบ่งชั้นแบบ Clean Architecture: `domain` → `usecase` → `repository` → `delivery/http`
@@ -216,56 +223,81 @@ Release build ใช้ได้เฉพาะ HTTPS เพราะไม่�
 
 ### Backend (`apps/backend/.env`)
 
-| ตัวแปร                                                                                 | จำเป็น | ค่าเริ่มต้น | คำอธิบาย                                                           |
-| -------------------------------------------------------------------------------------- | :----: | ----------- | ------------------------------------------------------------------ |
-| `DATABASE_URL`                                                                         |  ✅*   | –           | Postgres URI (ถ้าตั้งไว้จะใช้ตัวนี้ก่อน)                           |
-| `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`, `DB_SSLMODE`, `DB_TIMEZONE` |  ✅*   | –           | ใช้แทน `DATABASE_URL`                                              |
-| `APP_PORT`                                                                             |        | `8080`      | พอร์ตที่ server listen                                             |
-| `APP_ENV`                                                                              |        | –           | ตั้ง `prod` เพื่อให้ Swagger ใช้ `SWAGGER_HOST` และ https          |
-| `SWAGGER_ENABLED`                                                                      |        | ปิด         | ตั้ง `true` เพื่อเปิด `/docs`                                      |
-| `SWAGGER_HOST`                                                                         |        | –           | domain ที่แสดงใน Swagger ตอน prod                                  |
-| `CORS_ALLOW_ORIGINS`                                                                   |        | `*`         | origin ที่อนุญาต คั่นด้วย comma                                    |
-| `YOUTUBE_API_KEY`                                                                      |   ✅   | –           | YouTube Data API v3                                                |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`                                   |        | –           | ถ้าไม่ตั้ง API ฝั่งอ่านจะไม่จำกัด request และ `/contact` จะตอบ 503 |
-| `RESEND_API_KEY`, `CONTACT_EMAIL_TO`                                                   |        | –           | อีเมลแจ้งเตือนเมื่อมีข้อความ contact                               |
+| ตัวแปร                                                                                 | จำเป็น | ค่าเริ่มต้น | คำอธิบาย                                                                                                                          |
+| -------------------------------------------------------------------------------------- | :----: | ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                                         |  ✅*   | –           | Postgres URI (ถ้าตั้งไว้จะใช้ตัวนี้ก่อน)                                                                                          |
+| `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`, `DB_SSLMODE`, `DB_TIMEZONE` |  ✅*   | –           | ใช้แทน `DATABASE_URL`                                                                                                             |
+| `APP_PORT`                                                                             |        | `8080`      | พอร์ตที่ server listen                                                                                                            |
+| `APP_ENV`                                                                              |        | –           | ตั้ง `prod` เพื่อให้ Swagger ใช้ `SWAGGER_HOST` และ https                                                                         |
+| `SWAGGER_ENABLED`                                                                      |        | ปิด         | ตั้ง `true` เพื่อเปิด `/docs`                                                                                                     |
+| `SWAGGER_HOST`                                                                         |        | –           | domain ที่แสดงใน Swagger ตอน prod                                                                                                 |
+| `CORS_ALLOW_ORIGINS`                                                                   |        | `*`         | origin ที่อนุญาต คั่นด้วย comma                                                                                                   |
+| `YOUTUBE_API_KEY`                                                                      |   ✅   | –           | YouTube Data API v3                                                                                                               |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`                                   |        | –           | ถ้าไม่ตั้ง API ฝั่งอ่านจะไม่จำกัด request และ `/contact` จะตอบ 503                                                                |
+| `RESEND_API_KEY`, `CONTACT_EMAIL_TO`                                                   |        | –           | อีเมลแจ้งเตือนเมื่อมีข้อความ contact และเมื่อ quota YouTube ถึงเพดาน                                                              |
+| `GOOGLE_CLIENT_IDS`                                                                    |        | –           | OAuth client id ที่ยอมรับเป็น audience ของ Google ID token คั่นด้วย comma (Web, Android, iOS) ถ้าไม่ตั้ง `/auth/google` จะตอบ 500 |
+| `JWT_SECRET`                                                                           |        | –           | secret สำหรับ sign session JWT (HS256) ยาวอย่างน้อย 32 bytes ถ้าไม่ตั้ง endpoint ที่ต้อง login จะตอบ 500                          |
+| `INTERNAL_PROXY_KEY`                                                                   |        | –           | ต้องตรงกับฝั่งเว็บ ใช้ยืนยันว่า request มาจากเว็บของเรา ถึงจะเชื่อ IP ผู้ใช้ที่เว็บส่งต่อมาใน `X-Forwarded-For`                   |
+| `YOUTUBE_QUOTA_GUARD_UNITS`                                                            |        | `9000`      | เพดาน units/วัน ที่ถึงแล้วจะปิดการค้นบน YouTube                                                                                   |
+| `YOUTUBE_SEARCH_PER_USER_DAILY`                                                        |        | `10`        | จำนวนครั้งที่ผู้ใช้หนึ่งคนค้นบน YouTube ได้ต่อวัน                                                                                 |
 
 \* ต้องตั้งอย่างใดอย่างหนึ่ง
 
 ### Web (`apps/frontend/.env`)
 
-| ตัวแปร                                               | ฝั่ง   | ค่าเริ่มต้น             | คำอธิบาย                                        |
-| ---------------------------------------------------- | ------ | ----------------------- | ----------------------------------------------- |
-| `API_BASE_URL`                                       | server | `http://localhost:8080` | URL ของ backend (ห้ามใส่ prefix `NEXT_PUBLIC_`) |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | server | –                       | rate limit ของเว็บ                              |
-| `NEXT_PUBLIC_INSTALL_ANDROID_MODE`                   | client | `play-store`            | `play-store` / `pwa` / `disabled`               |
-| `NEXT_PUBLIC_INSTALL_IOS_MODE`                       | client | `pwa`                   | `app-store` / `pwa` / `disabled`                |
-| `NEXT_PUBLIC_PLAY_STORE_URL`                         | client | ลิงก์ Play Store ของแอป |                                                 |
-| `NEXT_PUBLIC_APP_STORE_URL`                          | client | ว่าง                    | ต้องตั้งก่อนใช้โหมด `app-store`                 |
+| ตัวแปร                                               | ฝั่ง   | ค่าเริ่มต้น             | คำอธิบาย                                                               |
+| ---------------------------------------------------- | ------ | ----------------------- | ---------------------------------------------------------------------- |
+| `API_BASE_URL`                                       | server | `http://localhost:8080` | URL ของ backend (ห้ามใส่ prefix `NEXT_PUBLIC_`)                        |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | server | –                       | rate limit ของเว็บ                                                     |
+| `NEXT_PUBLIC_INSTALL_ANDROID_MODE`                   | client | `play-store`            | `play-store` / `pwa` / `disabled`                                      |
+| `NEXT_PUBLIC_INSTALL_IOS_MODE`                       | client | `pwa`                   | `app-store` / `pwa` / `disabled`                                       |
+| `NEXT_PUBLIC_PLAY_STORE_URL`                         | client | ลิงก์ Play Store ของแอป |                                                                        |
+| `NEXT_PUBLIC_APP_STORE_URL`                          | client | ว่าง                    | ต้องตั้งก่อนใช้โหมด `app-store`                                        |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID`                       | client | ว่าง                    | Web OAuth client id ถ้าไม่ตั้งจะซ่อนปุ่ม login และฟีเจอร์ที่ต้อง login |
+| `INTERNAL_PROXY_KEY`                                 | server | –                       | ค่าเดียวกับฝั่ง backend                                                |
 
 ค่า `NEXT_PUBLIC_*` ถูกฝังตอน build เปลี่ยนแล้วต้อง build หรือ deploy ใหม่
 
 ### Mobile (`--dart-define`)
 
-| ตัวแปร         | ค่าเริ่มต้น            | คำอธิบาย        |
-| -------------- | ---------------------- | --------------- |
-| `API_BASE_URL` | `http://10.0.2.2:8080` | URL ของ backend |
+| ตัวแปร                    | ค่าเริ่มต้น            | คำอธิบาย                                                                                              |
+| ------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| `API_BASE_URL`            | `http://10.0.2.2:8080` | URL ของ backend                                                                                       |
+| `GOOGLE_SERVER_CLIENT_ID` | ว่าง                   | Web OAuth client id (เป็น audience ของ ID token) ถ้าไม่ตั้งจะซ่อน login, playlist และการค้นบน YouTube |
+| `GOOGLE_IOS_CLIENT_ID`    | ว่าง                   | iOS OAuth client id (ใช้เฉพาะ iOS)                                                                    |
+
+Login บน Android ต้องสร้าง OAuth client แบบ Android ใน Google Cloud Console สำหรับ package `com.tunetrend.tunetrend_mobile` แยกตาม SHA-1 ของ debug keystore, upload key และ Play App Signing key (ดูได้ใน Play Console → App integrity) CI ส่ง `GOOGLE_SERVER_CLIENT_ID` จาก GitHub Actions variable ชื่อเดียวกัน
 
 ## API
 
 Response ทุกเส้นเป็นรูป `{ "success": true, "data": ... }` หรือ `{ "success": false, "error": "..." }`
 
-| Method | Path          | Query / Body                                      | คำอธิบาย                                      |
-| ------ | ------------- | ------------------------------------------------- | --------------------------------------------- |
-| GET    | `/health`     | –                                                 | ตรวจสถานะ API และฐานข้อมูล                    |
-| GET    | `/trends`     | `country`, `category`                             | ชาร์ตยอดนิยม (ไม่ใส่ `category` = หมวดเพลง)   |
-| GET    | `/trends/new` | `country`, `category`                             | เผยแพร่ภายใน 7 วัน                            |
-| GET    | `/trends/mv`  | `country`                                         | เฉพาะ Official MV                             |
-| GET    | `/categories` | `country`                                         | หมวดหมู่ที่เปิดใช้งานในประเทศนั้น             |
-| GET    | `/discover`   | –                                                 | วิดีโอฮิตไม่เกิน 2 รายการต่อหมวด รวมทุกประเทศ |
-| POST   | `/contact`    | `name`, `message`, `contactEmail`, `contactPhone` | ส่งข้อความหาผู้พัฒนา                          |
+| Method               | Path                                  | Query / Body                                       | คำอธิบาย                                         |
+| -------------------- | ------------------------------------- | -------------------------------------------------- | ------------------------------------------------ |
+| GET                  | `/health`                             | –                                                  | ตรวจสถานะ API และฐานข้อมูล                       |
+| GET                  | `/trends`                             | `country`, `category`                              | ชาร์ตยอดนิยม (ไม่ใส่ `category` = หมวดเพลง)      |
+| GET                  | `/trends/new`                         | `country`, `category`                              | เผยแพร่ภายใน 7 วัน                               |
+| GET                  | `/trends/mv`                          | `country`                                          | เฉพาะ Official MV                                |
+| GET                  | `/categories`                         | `country`                                          | หมวดหมู่ที่เปิดใช้งานในประเทศนั้น                |
+| GET                  | `/discover`                           | –                                                  | วิดีโอฮิตไม่เกิน 2 รายการต่อหมวด รวมทุกประเทศ    |
+| POST                 | `/contact`                            | `name`, `message`, `contactEmail`, `contactPhone`  | ส่งข้อความหาผู้พัฒนา                             |
+| GET                  | `/trends/searched`                    | `country`                                          | เพลงที่ถูกค้นหาแล้วกดเล่นมากที่สุดใน 7 วัน       |
+| GET                  | `/search`                             | `q`, `country`, `category`                         | ค้นในชาร์ตของระบบ (`q` ยาว 2–100 ตัวอักษร)       |
+| GET                  | `/search/youtube` 🔒                  | `q`, `country`, `category`                         | ค้นบน YouTube ตอบ `items`, `remaining`, `cached` |
+| POST                 | `/search/hit`                         | `videoId`, `country`, `q`                          | นับคะแนนเมื่อกดเล่นจากผลค้นหา                    |
+| POST                 | `/auth/google`                        | `idToken`                                          | แลก Google ID token เป็น session JWT             |
+| GET / DELETE         | `/me` 🔒                              | –                                                  | ข้อมูลผู้ใช้ / ลบบัญชีพร้อม playlist ทั้งหมด     |
+| GET / POST           | `/me/playlists` 🔒                    | `name`                                             | รายการ playlist / สร้างใหม่                      |
+| GET / PATCH / DELETE | `/me/playlists/:id` 🔒                | `name`                                             | ดู (พร้อมเพลง) / แก้ชื่อ / ลบ                    |
+| POST                 | `/me/playlists/:id/items` 🔒          | `videoId`, `title`, `channelTitle`, `thumbnailUrl` | เพิ่มเพลง (ซ้ำได้ `409`)                         |
+| DELETE               | `/me/playlists/:id/items/:videoId` 🔒 | –                                                  | เอาเพลงออก                                       |
+| PUT                  | `/me/playlists/:id/order` 🔒          | `videoIds`                                         | จัดลำดับใหม่ (ต้องเป็นเพลงชุดเดิมครบทุกตัว)      |
 
 - `country` มีค่าเริ่มต้นเป็น `TH` · ส่ง `category` ที่ระบบไม่รู้จักจะได้ `400`
-- Rate limit: กลุ่ม GET 60 request/นาที/IP · `/contact` 5 ครั้ง/10 นาที/IP
+- 🔒 ต้องส่ง `Authorization: Bearer <JWT>` ที่ได้จาก `/auth/google` (อายุ 30 วัน) ไม่งั้นได้ `401` · playlist ของคนอื่นตอบ `404`
+- `/search/youtube` ตอบ error `user_limit` (429), `quota_exhausted` / `search_unavailable` (503) หรือ `youtube_error` (502) พร้อม `retryAt` และ `remaining`
+- Rate limit: กลุ่ม GET 60 request/นาที/IP · `/contact` 5 ครั้ง/10 นาที/IP · `/search` และ `/search/youtube` 30 ครั้ง/นาที/IP · `/search/hit` 60 ครั้ง/นาที/IP · `/auth/google` 10 ครั้ง/นาที/IP
+- IP ที่ใช้นับ: IP ตัวขวาสุดใน `X-Forwarded-For` (ที่ proxy ของ Render เติมให้) ยกเว้น request จากเว็บที่ส่ง `X-Internal-Key` ตรงกับ `INTERNAL_PROXY_KEY` ถึงจะใช้ IP ตัวซ้ายสุดที่เว็บส่งต่อมา
 - เอกสาร API ฉบับเต็ม: Swagger ที่ `/docs/index.html`
 
 ## Background Workers
@@ -279,6 +311,9 @@ Worker รันอยู่ใน process เดียวกับ API ทำ�
 | `video_category_sync`        | 24 ชม.      | ซิงก์รายชื่อหมวดและคำนวณสถานะเปิด/ปิด                 |
 | category resume              | 7 วัน       | ลองซิงก์หมวดที่ระบบปิดอัตโนมัติอีกครั้ง               |
 | api log cleanup              | 24 ชม.      | ลบ `api_logs` ที่เก่ากว่า 14 วัน                      |
+| `search_video_refresh`       | 6 ชม.       | อัปเดตยอดวิวของวิดีโอจากผลค้นหาที่ถูกกดเล่นใน 7 วัน   |
+
+ทุกการเรียก YouTube API (รวมของ worker) ถูกนับลง Redis key `yt:quota:{วันที่ตามเวลาแปซิฟิก}` เพื่อใช้กับเพดาน `YOUTUBE_QUOTA_GUARD_UNITS` เพดานนี้กั้นเฉพาะการค้นหาของผู้ใช้ ไม่กั้น worker
 
 หมวดที่ดึงข้อมูลล้มเหลวต่อเนื่องเกิน grace period (24 ชม.) จะถูกซ่อนอัตโนมัติ (`deactivated_reason = auto_fetch_failure`) และเปิดกลับเองเมื่อซิงก์สำเร็จ หมวดที่แอดมินปิดเองด้วยค่า reason อื่น ระบบจะไม่เปิดคืนให้
 

@@ -23,6 +23,7 @@ type Limiter struct {
 	limit      int64
 	window     time.Duration
 	failClosed bool
+	scope      string
 }
 
 func New(limit int, window time.Duration) *Limiter {
@@ -40,6 +41,11 @@ func (l *Limiter) FailClosed() *Limiter {
 	return l
 }
 
+func (l *Limiter) Named(scope string) *Limiter {
+	l.scope = scope
+	return l
+}
+
 func (l *Limiter) Middleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if l.baseURL == "" || l.token == "" {
@@ -48,6 +54,9 @@ func (l *Limiter) Middleware() fiber.Handler {
 		}
 
 		key := "tunetrend-backend-ratelimit:" + httputil.ClientIP(c)
+		if l.scope != "" {
+			key = "tunetrend-backend-ratelimit:" + l.scope + ":" + httputil.ClientIP(c)
+		}
 
 		count, err := l.incrementAndExpire(key)
 		if err != nil {

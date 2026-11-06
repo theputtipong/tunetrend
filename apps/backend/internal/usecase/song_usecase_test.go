@@ -53,6 +53,16 @@ func (m *MockYouTubeRepository) FetchVideoCategories(countryCode string) ([]doma
 	return args.Get(0).([]domain.VideoCategory), args.Error(1)
 }
 
+func (m *MockYouTubeRepository) SearchVideos(query, countryCode, categoryID string) ([]domain.SearchVideo, error) {
+	args := m.Called(query, countryCode, categoryID)
+	return args.Get(0).([]domain.SearchVideo), args.Error(1)
+}
+
+func (m *MockYouTubeRepository) FetchVideosByIDs(ids []string) ([]domain.SearchVideo, error) {
+	args := m.Called(ids)
+	return args.Get(0).([]domain.SearchVideo), args.Error(1)
+}
+
 type MockCategoryVideoRepository struct {
 	mock.Mock
 }

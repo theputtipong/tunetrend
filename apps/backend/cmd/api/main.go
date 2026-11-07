@@ -80,6 +80,7 @@ func main() {
 		Repo: postgres.NewSearchRepository(db, categoryConfigs), YouTube: ytRepo, Guard: quotaGuard,
 		Cache: searchcache.New(upstashClient), Deduper: searchcache.NewHitDeduper(upstashClient),
 		CategoryRepo: categoryRepo, CategoryConfigs: categoryConfigs, Countries: countries,
+		VisitorKey: []byte(os.Getenv("JWT_SECRET")),
 	})
 	searchHandler := http.NewSearchHandler(searchUsecase)
 

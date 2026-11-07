@@ -44,6 +44,11 @@ func runSearchVideoRefresh(uc domain.SearchUsecase, logRepo domain.WorkerLogRepo
 			entry.Status = domain.WorkerLogStatusFailed
 			entry.Message = runErr.Error()
 		}
+		if pruned, pruneErr := uc.PruneSearchQueryHits(); pruneErr != nil {
+			log.Printf("⚠️ [Worker] ลบ search_query_hits เก่าไม่สำเร็จ: %v\n", pruneErr)
+		} else if pruned > 0 {
+			log.Printf("🧹 [Worker] ลบ search_query_hits ที่เก่ากว่า 7 วัน %d แถว\n", pruned)
+		}
 		if logErr := logRepo.CreateLog(entry); logErr != nil {
 			log.Printf("⚠️ [Worker] บันทึก Log ของ search_video_refresh ไม่สำเร็จ: %v\n", logErr)
 		}

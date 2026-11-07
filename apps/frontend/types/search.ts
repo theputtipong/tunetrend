@@ -14,12 +14,11 @@ export interface SearchItem {
   chartRank?: number;
 }
 
-export interface SearchedTrend extends SearchItem {
+export interface SearchedQuery {
+  query: string;
   rank: number;
-  hits: number;
-  prevRank: number | null;
-  rankChange: number;
-  isNew: boolean;
+  searches: number;
+  items: SearchItem[];
 }
 
 export interface LocalSearchResult {

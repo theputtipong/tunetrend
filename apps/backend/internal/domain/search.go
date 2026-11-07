@@ -58,6 +58,28 @@ type SearchHit struct {
 	HitAt       time.Time `gorm:"not null;index:idx_search_hits_country_hit_at,priority:2" json:"hitAt"`
 }
 
+type SearchQuery struct {
+	CountryCode      string       `gorm:"primaryKey;type:varchar(2)" json:"countryCode"`
+	QueryNorm        string       `gorm:"primaryKey;type:varchar(255)" json:"query"`
+	Results          []SearchItem `gorm:"type:jsonb;serializer:json" json:"results"`
+	ResultsUpdatedAt time.Time    `json:"resultsUpdatedAt"`
+}
+
+type SearchQueryHit struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	CountryCode string    `gorm:"type:varchar(2);not null;index:idx_search_query_hits_country_hit_at,priority:1" json:"countryCode"`
+	QueryNorm   string    `gorm:"type:varchar(255);not null" json:"query"`
+	VisitorHash string    `gorm:"type:varchar(32);not null" json:"-"`
+	HitAt       time.Time `gorm:"not null;index:idx_search_query_hits_country_hit_at,priority:2;index:idx_search_query_hits_hit_at" json:"hitAt"`
+}
+
+type SearchedQuery struct {
+	Query    string       `json:"query"`
+	Rank     int          `json:"rank"`
+	Searches int64        `json:"searches"`
+	Items    []SearchItem `json:"items"`
+}
+
 type SearchItem struct {
 	ID           string    `json:"id"`
 	Title        string    `json:"title"`
@@ -99,6 +121,10 @@ type SearchRepository interface {
 	VideoExists(videoID string) (bool, error)
 	CreateHit(hit SearchHit) error
 	SearchedTrends(countryCode string, now time.Time, limit int) ([]SearchedTrend, error)
+	CreateQueryHit(hit SearchQueryHit) error
+	SaveQueryResults(countryCode, queryNorm string, items []SearchItem, at time.Time) error
+	SearchedQueries(countryCode string, since time.Time, minVisitors, limit int) ([]SearchedQuery, error)
+	DeleteQueryHitsBefore(before time.Time) (int64, error)
 }
 
 type YouTubeQuotaGuard interface {
@@ -115,12 +141,15 @@ type SearchCache interface {
 
 type HitDeduper interface {
 	FirstHit(ip, videoID string) (bool, error)
+	FirstSearch(visitorHash, countryCode, queryNorm string) (bool, error)
 }
 
 type SearchUsecase interface {
-	SearchLocal(query, countryCode, categoryID string) (LocalSearchResult, error)
+	SearchLocal(ip, query, countryCode, categoryID string) (LocalSearchResult, error)
 	SearchYouTube(userID, query, countryCode, categoryID string) (YouTubeSearchResult, error)
 	RecordHit(ip, videoID, countryCode, query string) (bool, error)
 	GetSearchedTrends(countryCode string) ([]SearchedTrend, error)
 	RefreshSearchVideoStats() (int, error)
+	GetSearchedQueries(countryCode string) ([]SearchedQuery, error)
+	PruneSearchQueryHits() (int64, error)
 }

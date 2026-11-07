@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -279,4 +280,71 @@ func (r *searchRepository) SearchedTrends(countryCode string, now time.Time, lim
 		}
 	}
 	return trends, nil
+}
+
+func (r *searchRepository) CreateQueryHit(hit domain.SearchQueryHit) error {
+	return r.db.Create(&hit).Error
+}
+
+func (r *searchRepository) SaveQueryResults(countryCode, queryNorm string, items []domain.SearchItem, at time.Time) error {
+	if items == nil {
+		items = []domain.SearchItem{}
+	}
+	row := domain.SearchQuery{CountryCode: countryCode, QueryNorm: queryNorm, Results: items, ResultsUpdatedAt: at}
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "country_code"}, {Name: "query_norm"}},
+		DoUpdates: clause.AssignmentColumns([]string{"results", "results_updated_at"}),
+	}).Create(&row).Error
+}
+
+type searchedQueryRow struct {
+	Query    string
+	Searches int64
+	Results  string
+}
+
+func (r *searchRepository) SearchedQueries(countryCode string, since time.Time, minVisitors, limit int) ([]domain.SearchedQuery, error) {
+	var rows []searchedQueryRow
+	err := r.db.Raw(`
+		SELECT q.query_norm AS query, COUNT(*) AS searches, q.results::text AS results
+		FROM search_query_hits h
+		JOIN search_queries q ON q.country_code = h.country_code AND q.query_norm = h.query_norm
+		WHERE h.country_code = @country AND h.hit_at >= @since AND jsonb_array_length(q.results) > 0
+		GROUP BY q.country_code, q.query_norm
+		HAVING COUNT(DISTINCT h.visitor_hash) >= @minVisitors
+		ORDER BY searches DESC, MAX(h.hit_at) DESC, q.query_norm
+		LIMIT @limit
+	`, map[string]any{"country": countryCode, "since": since, "minVisitors": minVisitors, "limit": limit}).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]domain.SearchedQuery, len(rows))
+	for i, row := range rows {
+		var items []domain.SearchItem
+		if err := json.Unmarshal([]byte(row.Results), &items); err != nil {
+			return nil, fmt.Errorf("decode results for %q: %w", row.Query, err)
+		}
+		out[i] = domain.SearchedQuery{Query: row.Query, Rank: i + 1, Searches: row.Searches, Items: items}
+	}
+	return out, nil
+}
+
+func (r *searchRepository) DeleteQueryHitsBefore(before time.Time) (int64, error) {
+	var deleted int64
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		res := tx.Where("hit_at < ?", before).Delete(&domain.SearchQueryHit{})
+		if res.Error != nil {
+			return res.Error
+		}
+		deleted = res.RowsAffected
+		return tx.Exec(`
+			DELETE FROM search_queries q
+			WHERE NOT EXISTS (
+				SELECT 1 FROM search_query_hits h
+				WHERE h.country_code = q.country_code AND h.query_norm = q.query_norm
+			)
+		`).Error
+	})
+	return deleted, err
 }

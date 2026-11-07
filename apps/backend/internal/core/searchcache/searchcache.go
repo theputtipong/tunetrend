@@ -52,3 +52,7 @@ func NewHitDeduper(store *upstash.Client) *HitDeduper {
 func (d *HitDeduper) FirstHit(ip, videoID string) (bool, error) {
 	return d.store.SetNX("search:hit:"+ip+":"+videoID, "1", HitDedupTTL)
 }
+
+func (d *HitDeduper) FirstSearch(visitorHash, countryCode, queryNorm string) (bool, error) {
+	return d.store.SetNX("search:q:"+countryCode+":"+visitorHash+":"+queryNorm, "1", HitDedupTTL)
+}

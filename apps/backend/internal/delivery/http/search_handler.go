@@ -22,6 +22,7 @@ func NewSearchHandler(usecase domain.SearchUsecase) *SearchHandler {
 
 func RegisterSearchRoutes(r fiber.Router, h *SearchHandler, authUsecase domain.AuthUsecase, trendsLimiter fiber.Handler) {
 	r.Get("/trends/searched", trendsLimiter, h.GetSearchedTrends)
+	r.Get("/trends/searched-queries", trendsLimiter, h.GetSearchedQueries)
 	r.Get("/search", ratelimit.New(30, 60*time.Second).Named("search").Middleware(), h.Search)
 	r.Get("/search/youtube", ratelimit.New(30, 60*time.Second).Named("search_youtube").Middleware(),
 		RequireAuth(authUsecase), h.SearchYouTube)
@@ -49,12 +50,17 @@ func searchCommonError(c *fiber.Ctx, err error) error {
 // @Param q query string true "คำค้น 2-100 ตัวอักษร"
 // @Param country query string false "รหัสประเทศ (Default: TH)"
 // @Param category query string false "รหัสหมวดหมู่ (Default: 10)"
+// @Param track query string false "0 = ไม่นับเป็นการค้นในแท็บคำค้นยอดนิยม (ใช้ตอนเปิดจากลิงก์ในแท็บนั้นเอง)"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 429 {object} map[string]interface{}
 // @Router /search [get]
 func (h *SearchHandler) Search(c *fiber.Ctx) error {
-	res, err := h.usecase.SearchLocal(c.Query("q"), c.Query("country", "TH"), c.Query("category"))
+	visitorIP := httputil.ClientIP(c)
+	if c.Query("track") == "0" {
+		visitorIP = ""
+	}
+	res, err := h.usecase.SearchLocal(visitorIP, c.Query("q"), c.Query("country", "TH"), c.Query("category"))
 	if err != nil {
 		return searchCommonError(c, err)
 	}
@@ -155,4 +161,21 @@ func (h *SearchHandler) GetSearchedTrends(c *fiber.Ctx) error {
 		return searchCommonError(c, err)
 	}
 	return c.JSON(fiber.Map{"success": true, "data": trends})
+}
+
+// GetSearchedQueries godoc
+// @Summary คำค้นยอดนิยม
+// @Description กลุ่มคำค้นหมวดเพลงใน 7 วันล่าสุด เรียงตามจำนวนการค้น (นับ 1 ครั้ง/IP/คำ/ชม.) แสดงเฉพาะคำที่มีผู้ค้นต่างกันอย่างน้อย 2 คน ไม่เกิน 30 คำ คำละ 5 ผลจากการค้นล่าสุด
+// @Tags Songs
+// @Produce json
+// @Param country query string false "รหัสประเทศ (Default: TH)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Router /trends/searched-queries [get]
+func (h *SearchHandler) GetSearchedQueries(c *fiber.Ctx) error {
+	groups, err := h.usecase.GetSearchedQueries(c.Query("country", "TH"))
+	if err != nil {
+		return searchCommonError(c, err)
+	}
+	return c.JSON(fiber.Map{"success": true, "data": groups})
 }

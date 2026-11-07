@@ -596,6 +596,12 @@
             "description": "รหัสหมวดหมู่ (Default: 10)",
             "name": "category",
             "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "0 = ไม่นับเป็นการค้นในแท็บคำค้นยอดนิยม (ใช้ตอนเปิดจากลิงก์ในแท็บนั้นเอง)",
+            "name": "track",
+            "in": "query"
           }
         ],
         "responses": {
@@ -854,6 +860,38 @@
         "produces": ["application/json"],
         "tags": ["Songs"],
         "summary": "มาแรงจากการค้นหา",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "รหัสประเทศ (Default: TH)",
+            "name": "country",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        }
+      }
+    },
+    "/trends/searched-queries": {
+      "get": {
+        "description": "กลุ่มคำค้นหมวดเพลงใน 7 วันล่าสุด เรียงตามจำนวนการค้น (นับ 1 ครั้ง/IP/คำ/ชม.) แสดงเฉพาะคำที่มีผู้ค้นต่างกันอย่างน้อย 2 คน ไม่เกิน 30 คำ คำละ 5 ผลจากการค้นล่าสุด",
+        "produces": ["application/json"],
+        "tags": ["Songs"],
+        "summary": "คำค้นยอดนิยม",
         "parameters": [
           {
             "type": "string",

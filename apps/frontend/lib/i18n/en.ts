@@ -75,14 +75,12 @@ export const en = {
     discoverHeading: "Explore other categories",
   },
   searched: {
-    hint: "Songs people in this country searched for and played the most in the last 7 days",
+    hint: "What people in this country searched for most in the last 7 days, with the latest results for each search",
     searches: (n: string) => `${n} searches`,
-    rankUp: (n: number) => `▲ ${n}`,
-    rankDown: (n: number) => `▼ ${n}`,
-    isNew: "New",
+    viewAll: "See all results",
     emptyTitle: "Nothing searched yet",
     emptyDescription:
-      "This chart fills up as people search and play songs. Try searching for a song you love.",
+      "A search shows up here once at least 2 people have searched for it. Try searching for a song you love.",
   },
   search: {
     metaTitle: (q: string) => `"${q}" · TuneTrend search`,
@@ -246,7 +244,7 @@ export const en = {
     backToTrends: "← Back to trends",
     eyebrow: "Legal",
     heading: "Privacy Policy",
-    lastUpdated: "Last updated: November 6, 2026",
+    lastUpdated: "Last updated: November 7, 2026",
     intro:
       'TuneTrend (the "app", "we", "us") is a small, independently-run project that shows ' +
       "trending YouTube music and videos by country, available as a website and as Android/iOS " +
@@ -272,6 +270,12 @@ export const en = {
             "information, and it's entirely optional.",
           "IP address (server-side, transient): used only to rate-limit abuse of the contact " +
             "form and our API. We don't log or store IP addresses long-term.",
+          "Search terms (no sign-in needed): when you search for a song, we save the search term, " +
+            'the country and the latest results for that term to show on the public "Most Searched" ' +
+            "tab. A term only appears there once at least 2 people have searched for it within 7 " +
+            "days, so private searches stay private. To count distinct people, we keep a one-way " +
+            "hash of your IP address (it can't be turned back into the IP) with each search for 7 " +
+            "days, then delete it. Search terms are never linked to your account.",
           "Local preferences: your theme (light/dark), language, and whether you've seen the " +
             "onboarding tour or install prompt are saved in your browser's local storage or " +
             "your device's app storage. This never leaves your device.",

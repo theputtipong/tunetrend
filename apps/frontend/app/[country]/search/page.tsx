@@ -17,7 +17,11 @@ import { SearchItemRow } from "@/components/search/SearchItemRow";
 import { YouTubeSection } from "@/components/search/YouTubeSection";
 import type { SearchItem } from "@/types/search";
 
-type SearchParams = Promise<{ q?: string | string[]; category?: string | string[] }>;
+type SearchParams = Promise<{
+  q?: string | string[];
+  category?: string | string[];
+  track?: string | string[];
+}>;
 
 function firstParam(value: string | string[] | undefined): string {
   return (Array.isArray(value) ? value[0] : value) ?? "";
@@ -86,7 +90,13 @@ export default async function SearchPage({
 
       {valid ? (
         <Suspense key={`${q}|${category}`} fallback={<ResultsSkeleton />}>
-          <SearchResults q={q} country={country} category={category} lang={lang} />
+          <SearchResults
+            q={q}
+            country={country}
+            category={category}
+            lang={lang}
+            track={firstParam(raw.track) !== "0"}
+          />
         </Suspense>
       ) : (
         <StateMessage
@@ -119,12 +129,13 @@ async function SearchResults({
   country,
   category,
   lang,
-}: Readonly<{ q: string; country: CountryCode; category: string; lang: Lang }>) {
+  track,
+}: Readonly<{ q: string; country: CountryCode; category: string; lang: Lang; track: boolean }>) {
   const t = dictionaries[lang].search;
   let result;
   try {
     const clientIp = getClientIp(new Request("http://local", { headers: await headers() }));
-    result = await fetchLocalSearch(q, country, category, clientIp);
+    result = await fetchLocalSearch(q, country, category, clientIp, track);
   } catch {
     return <StateMessage variant="error" title={t.errorTitle} description={t.errorDescription} />;
   }

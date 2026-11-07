@@ -1,6 +1,10 @@
 package usecase
 
 import (
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"regexp"
@@ -19,6 +23,10 @@ const (
 	searchedTrendsLimit   = 30
 	searchedTrendsWindow  = 7 * 24 * time.Hour
 	searchCacheKeyPattern = "yt:search:%s:%s:%s"
+
+	searchedQueriesMinVisitors = 2
+	searchedQueriesLimit       = 30
+	searchedQueryItemsLimit    = 5
 )
 
 var videoIDPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{11}$`)
@@ -32,6 +40,7 @@ type SearchDeps struct {
 	CategoryRepo    domain.VideoCategoryRepository
 	CategoryConfigs []domain.CategoryVideoConfig
 	Countries       []string
+	VisitorKey      []byte
 	Now             func() time.Time
 }
 
@@ -44,6 +53,13 @@ type searchUsecase struct {
 func NewSearchUsecase(deps SearchDeps) domain.SearchUsecase {
 	if deps.Now == nil {
 		deps.Now = time.Now
+	}
+	if len(deps.VisitorKey) == 0 {
+		log.Println("⚠️ [Search] ไม่มี VisitorKey (JWT_SECRET) ใช้ key สุ่มต่อ process แทน — รีสตาร์ตแล้วคนเดิมจะถูกนับเป็นคนใหม่")
+		deps.VisitorKey = make([]byte, 32)
+		if _, err := rand.Read(deps.VisitorKey); err != nil {
+			panic(fmt.Sprintf("generate visitor key: %v", err))
+		}
 	}
 	countries := make(map[string]bool, len(deps.Countries))
 	for _, c := range deps.Countries {
@@ -116,7 +132,7 @@ func (u *searchUsecase) validateCategory(country, categoryID string) error {
 	return invalid
 }
 
-func (u *searchUsecase) SearchLocal(query, countryCode, categoryID string) (domain.LocalSearchResult, error) {
+func (u *searchUsecase) SearchLocal(ip, query, countryCode, categoryID string) (domain.LocalSearchResult, error) {
 	in, err := u.validate(query, countryCode, categoryID)
 	if err != nil {
 		return domain.LocalSearchResult{}, err
@@ -130,7 +146,64 @@ func (u *searchUsecase) SearchLocal(query, countryCode, categoryID string) (doma
 		items = []domain.SearchItem{}
 	}
 
+	u.countQuerySearch(ip, in, items)
+
 	return domain.LocalSearchResult{Items: items, SuggestYouTube: len(items) < suggestYouTubeBelow}, nil
+}
+
+func (u *searchUsecase) visitorHash(ip string) string {
+	mac := hmac.New(sha256.New, u.deps.VisitorKey)
+	mac.Write([]byte(ip))
+	return hex.EncodeToString(mac.Sum(nil))[:32]
+}
+
+func firstItems(items []domain.SearchItem, n int) []domain.SearchItem {
+	if len(items) > n {
+		items = items[:n]
+	}
+	return append([]domain.SearchItem{}, items...)
+}
+
+func (u *searchUsecase) countQuerySearch(ip string, in searchInput, items []domain.SearchItem) {
+	if ip == "" || in.categoryID != domain.MusicCategoryID || len(items) == 0 {
+		return
+	}
+	visitor := u.visitorHash(ip)
+	first, err := u.deps.Deduper.FirstSearch(visitor, in.country, in.queryNorm)
+	if err != nil {
+		log.Printf("⚠️ [Search] ตรวจการค้นซ้ำไม่สำเร็จ ข้ามการนับคำค้น: %v", err)
+		return
+	}
+	if !first {
+		return
+	}
+
+	now := u.deps.Now()
+	if err := u.deps.Repo.SaveQueryResults(in.country, in.queryNorm, firstItems(items, searchedQueryItemsLimit), now); err != nil {
+		log.Printf("⚠️ [Search] บันทึกผลของคำค้นไม่สำเร็จ: %v", err)
+		return
+	}
+	hit := domain.SearchQueryHit{CountryCode: in.country, QueryNorm: in.queryNorm, VisitorHash: visitor, HitAt: now}
+	if err := u.deps.Repo.CreateQueryHit(hit); err != nil {
+		log.Printf("⚠️ [Search] บันทึกการค้นไม่สำเร็จ: %v", err)
+	}
+}
+
+func (u *searchUsecase) refreshQueryResults(in searchInput) {
+	if in.categoryID != domain.MusicCategoryID {
+		return
+	}
+	items, err := u.deps.Repo.SearchLocal(in.country, in.categoryID, in.query, searchedQueryItemsLimit)
+	if err != nil {
+		log.Printf("⚠️ [Search] โหลดผลค้นใหม่ของคำค้นไม่สำเร็จ: %v", err)
+		return
+	}
+	if len(items) == 0 {
+		return
+	}
+	if err := u.deps.Repo.SaveQueryResults(in.country, in.queryNorm, firstItems(items, searchedQueryItemsLimit), u.deps.Now()); err != nil {
+		log.Printf("⚠️ [Search] บันทึกผลของคำค้นไม่สำเร็จ: %v", err)
+	}
 }
 
 func (u *searchUsecase) quotaError(err error) error {
@@ -193,6 +266,7 @@ func (u *searchUsecase) SearchYouTube(userID, query, countryCode, categoryID str
 	if err := u.deps.Cache.Set(cacheKey, items); err != nil {
 		log.Printf("⚠️ [Search] เขียนแคชไม่สำเร็จ: %v", err)
 	}
+	u.refreshQueryResults(in)
 
 	return domain.YouTubeSearchResult{Items: items, Remaining: remaining}, nil
 }
@@ -279,6 +353,25 @@ func (u *searchUsecase) GetSearchedTrends(countryCode string) ([]domain.Searched
 		trends[i].RankChange = *trends[i].PrevRank - trends[i].Rank
 	}
 	return trends, nil
+}
+
+func (u *searchUsecase) GetSearchedQueries(countryCode string) ([]domain.SearchedQuery, error) {
+	country, err := u.validateCountry(countryCode)
+	if err != nil {
+		return nil, err
+	}
+	groups, err := u.deps.Repo.SearchedQueries(country, u.deps.Now().Add(-searchedTrendsWindow), searchedQueriesMinVisitors, searchedQueriesLimit)
+	if err != nil {
+		return nil, err
+	}
+	if groups == nil {
+		groups = []domain.SearchedQuery{}
+	}
+	return groups, nil
+}
+
+func (u *searchUsecase) PruneSearchQueryHits() (int64, error) {
+	return u.deps.Repo.DeleteQueryHitsBefore(u.deps.Now().Add(-searchedTrendsWindow))
 }
 
 func (u *searchUsecase) RefreshSearchVideoStats() (int, error) {

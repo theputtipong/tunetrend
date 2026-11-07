@@ -1,6 +1,9 @@
 package usecase_test
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"strings"
 	"testing"
@@ -45,6 +48,24 @@ func (m *MockSearchRepository) CreateHit(hit domain.SearchHit) error {
 	return m.Called(hit).Error(0)
 }
 
+func (m *MockSearchRepository) CreateQueryHit(hit domain.SearchQueryHit) error {
+	return m.Called(hit).Error(0)
+}
+
+func (m *MockSearchRepository) SaveQueryResults(countryCode, queryNorm string, items []domain.SearchItem, at time.Time) error {
+	return m.Called(countryCode, queryNorm, items, at).Error(0)
+}
+
+func (m *MockSearchRepository) SearchedQueries(countryCode string, since time.Time, minVisitors, limit int) ([]domain.SearchedQuery, error) {
+	args := m.Called(countryCode, since, minVisitors, limit)
+	return args.Get(0).([]domain.SearchedQuery), args.Error(1)
+}
+
+func (m *MockSearchRepository) DeleteQueryHitsBefore(before time.Time) (int64, error) {
+	args := m.Called(before)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 func (m *MockSearchRepository) SearchedTrends(countryCode string, now time.Time, limit int) ([]domain.SearchedTrend, error) {
 	args := m.Called(countryCode, now, limit)
 	return args.Get(0).([]domain.SearchedTrend), args.Error(1)
@@ -85,6 +106,9 @@ func newSearchHarness(t *testing.T) *searchHarness {
 		mailer: &recordingMailer{},
 		now:    fixedNow,
 	}
+	h.repo.On("CreateQueryHit", mock.Anything).Return(nil).Maybe()
+	h.repo.On("SaveQueryResults", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+	h.repo.On("SearchLocal", mock.Anything, mock.Anything, mock.Anything, 5).Return([]domain.SearchItem{}, nil).Maybe()
 	h.uc = h.build(upstash.New(h.srv.URL, h.srv.Token()))
 	return h
 }
@@ -103,8 +127,9 @@ func (h *searchHarness) build(store *upstash.Client) domain.SearchUsecase {
 			{CategoryID: "20", TableName: "gaming_videos"},
 			{CategoryID: "23", TableName: "comedy_videos"},
 		},
-		Countries: []string{"TH", "US"},
-		Now:       nowFn,
+		Countries:  []string{"TH", "US"},
+		VisitorKey: []byte("test-visitor-key"),
+		Now:        nowFn,
 	})
 }
 
@@ -121,7 +146,7 @@ func TestSearchLocal_SRCH01_ExistingSongsNeverCallYouTube(t *testing.T) {
 	items := []domain.SearchItem{{ID: "a"}, {ID: "b"}, {ID: "c"}, {ID: "d"}, {ID: "e"}}
 	h.repo.On("SearchLocal", "TH", "10", "ฝนตก", 30).Return(items, nil)
 
-	res, err := h.uc.SearchLocal("  ฝนตก ", "th", "")
+	res, err := h.uc.SearchLocal("9.9.9.9", "  ฝนตก ", "th", "")
 	require.NoError(t, err)
 	assert.Len(t, res.Items, 5)
 	assert.False(t, res.SuggestYouTube)
@@ -134,7 +159,7 @@ func TestSearchLocal_SRCH01_ExistingSongsNeverCallYouTube(t *testing.T) {
 func TestSearchLocal_SuggestsYouTubeWhenFewerThanFive(t *testing.T) {
 	h := newSearchHarness(t)
 	h.repo.On("SearchLocal", "TH", "10", "rain", 30).Return([]domain.SearchItem{}, nil)
-	res, err := h.uc.SearchLocal("rain", "TH", "10")
+	res, err := h.uc.SearchLocal("9.9.9.9", "rain", "TH", "10")
 	require.NoError(t, err)
 	assert.NotNil(t, res.Items)
 	assert.True(t, res.SuggestYouTube)
@@ -193,7 +218,7 @@ func TestSearch_SRCH04_InvalidInputReturnsValidationError(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := h.uc.SearchLocal(tc.q, tc.country, "10")
+			_, err := h.uc.SearchLocal("9.9.9.9", tc.q, tc.country, "10")
 			var ve *domain.ValidationError
 			assert.ErrorAs(t, err, &ve)
 			_, err = h.uc.SearchYouTube("user-1", tc.q, tc.country, "10")
@@ -201,7 +226,7 @@ func TestSearch_SRCH04_InvalidInputReturnsValidationError(t *testing.T) {
 		})
 	}
 	h.repo.On("SearchLocal", "TH", "10", strings.Repeat("ก", 100), 30).Return([]domain.SearchItem{}, nil)
-	_, err := h.uc.SearchLocal(strings.Repeat("ก", 100), "TH", "10")
+	_, err := h.uc.SearchLocal("9.9.9.9", strings.Repeat("ก", 100), "TH", "10")
 	assert.NoError(t, err, "100 runes is allowed")
 	assert.Len(t, h.yt.Calls, 0)
 }
@@ -229,18 +254,18 @@ func TestSearchYouTube_SRCH07_UserLimitButCacheStillServed(t *testing.T) {
 func TestSearch_SRCH08_CategoryRouting(t *testing.T) {
 	h := newSearchHarness(t)
 	h.repo.On("SearchLocal", "TH", "20", "minecraft", 30).Return([]domain.SearchItem{}, nil).Once()
-	_, err := h.uc.SearchLocal("minecraft", "TH", "20")
+	_, err := h.uc.SearchLocal("9.9.9.9", "minecraft", "TH", "20")
 	require.NoError(t, err)
 	h.repo.AssertExpectations(t)
 
 	var ve *domain.ValidationError
 	for _, cat := range []string{"23", "24", "999", "abc"} {
-		_, err = h.uc.SearchLocal("minecraft", "TH", cat)
+		_, err = h.uc.SearchLocal("9.9.9.9", "minecraft", "TH", cat)
 		assert.ErrorAs(t, err, &ve, "category %s", cat)
 		_, err = h.uc.SearchYouTube("user-1", "minecraft", "TH", cat)
 		assert.ErrorAs(t, err, &ve, "category %s", cat)
 	}
-	_, err = h.uc.SearchLocal("minecraft", "US", "20")
+	_, err = h.uc.SearchLocal("9.9.9.9", "minecraft", "US", "20")
 	assert.ErrorAs(t, err, &ve, "category inactive for country")
 }
 
@@ -304,7 +329,7 @@ func TestSearch_QUOTA04_RedisDownFailsClosedForYouTubeOnly(t *testing.T) {
 	h.srv.SetFail(true)
 	h.repo.On("SearchLocal", "TH", "10", "rain", 30).Return([]domain.SearchItem{{ID: "a"}}, nil)
 
-	res, err := h.uc.SearchLocal("rain", "TH", "10")
+	res, err := h.uc.SearchLocal("9.9.9.9", "rain", "TH", "10")
 	require.NoError(t, err)
 	assert.Len(t, res.Items, 1)
 
@@ -315,6 +340,7 @@ func TestSearch_QUOTA04_RedisDownFailsClosedForYouTubeOnly(t *testing.T) {
 	_, err = uc.SearchYouTube("user-1", "rain", "TH", "10")
 	assert.ErrorIs(t, err, domain.ErrQuotaUnavailable)
 	assert.Len(t, h.yt.Calls, 0)
+	h.repo.AssertNotCalled(t, "CreateQueryHit", mock.Anything)
 }
 
 func TestSearchYouTube_ReleasesUserCreditOnYouTubeError(t *testing.T) {
@@ -414,4 +440,159 @@ func TestRefreshSearchVideoStats_NoHitsSkipsYouTube(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, n)
 	assert.Len(t, h.yt.Calls, 0)
+}
+
+func itemsWithIDs(ids ...string) []domain.SearchItem {
+	out := make([]domain.SearchItem, len(ids))
+	for i, id := range ids {
+		out[i] = domain.SearchItem{ID: id}
+	}
+	return out
+}
+
+func dropExpectations(calls []*mock.Call, method string) []*mock.Call {
+	var kept []*mock.Call
+	for _, c := range calls {
+		if c.Method != method {
+			kept = append(kept, c)
+		}
+	}
+	return kept
+}
+
+func queryHits(h *searchHarness) []domain.SearchQueryHit {
+	var out []domain.SearchQueryHit
+	for _, c := range h.repo.Calls {
+		if c.Method == "CreateQueryHit" {
+			out = append(out, c.Arguments.Get(0).(domain.SearchQueryHit))
+		}
+	}
+	return out
+}
+
+func TestSearchLocal_TRND06_SearchCountsQueryAndSavesTopFiveResults(t *testing.T) {
+	h := newSearchHarness(t)
+	h.repo.On("SearchLocal", "TH", "10", "Rain  Song", 30).Return(itemsWithIDs("a", "b", "c", "d", "e", "f", "g"), nil)
+
+	_, err := h.uc.SearchLocal("1.2.3.4", "Rain  Song", "th", "")
+	require.NoError(t, err)
+
+	hits := queryHits(h)
+	require.Len(t, hits, 1)
+	assert.Equal(t, "TH", hits[0].CountryCode)
+	assert.Equal(t, "rain song", hits[0].QueryNorm)
+	assert.Equal(t, fixedNow, hits[0].HitAt)
+	mac := hmac.New(sha256.New, []byte("test-visitor-key"))
+	mac.Write([]byte("1.2.3.4"))
+	wantHash := hex.EncodeToString(mac.Sum(nil))[:32]
+	assert.Equal(t, wantHash, hits[0].VisitorHash)
+	h.repo.AssertCalled(t, "SaveQueryResults", "TH", "rain song", itemsWithIDs("a", "b", "c", "d", "e"), fixedNow)
+	assert.Equal(t, int64(3600), h.srv.TTL("search:q:TH:"+wantHash+":rain song"))
+	_, rawIPKey := h.srv.Value("search:q:TH:1.2.3.4:rain song")
+	assert.False(t, rawIPKey, "raw IP must not be stored next to the search term")
+}
+
+func TestSearchLocal_TRND13_UntrackedSearchFromGroupLinkNotCounted(t *testing.T) {
+	h := newSearchHarness(t)
+	h.repo.On("SearchLocal", "TH", "10", "rain song", 30).Return(itemsWithIDs("a"), nil)
+
+	res, err := h.uc.SearchLocal("", "rain song", "TH", "")
+	require.NoError(t, err)
+	assert.Len(t, res.Items, 1)
+	h.repo.AssertNotCalled(t, "CreateQueryHit", mock.Anything)
+	h.repo.AssertNotCalled(t, "SaveQueryResults", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestSearchLocal_TRND07_SameIPAndQueryCountedOncePerHour(t *testing.T) {
+	h := newSearchHarness(t)
+	h.repo.On("SearchLocal", "TH", "10", mock.Anything, 30).Return(itemsWithIDs("a"), nil)
+
+	for _, q := range []string{"rain song", " RAIN   song "} {
+		_, err := h.uc.SearchLocal("1.2.3.4", q, "TH", "")
+		require.NoError(t, err)
+	}
+	require.Len(t, queryHits(h), 1)
+
+	_, err := h.uc.SearchLocal("5.6.7.8", "rain song", "TH", "")
+	require.NoError(t, err)
+	hits := queryHits(h)
+	require.Len(t, hits, 2)
+	assert.NotEqual(t, hits[0].VisitorHash, hits[1].VisitorHash)
+}
+
+func TestSearchLocal_TRND08_NonMusicOrEmptyResultsNotCounted(t *testing.T) {
+	h := newSearchHarness(t)
+	h.repo.On("SearchLocal", "TH", "20", "rain song", 30).Return(itemsWithIDs("g"), nil)
+	h.repo.On("SearchLocal", "TH", "10", "nothing here", 30).Return([]domain.SearchItem{}, nil)
+
+	_, err := h.uc.SearchLocal("1.2.3.4", "rain song", "TH", "20")
+	require.NoError(t, err)
+	_, err = h.uc.SearchLocal("1.2.3.4", "nothing here", "TH", "")
+	require.NoError(t, err)
+
+	h.repo.AssertNotCalled(t, "CreateQueryHit", mock.Anything)
+	h.repo.AssertNotCalled(t, "SaveQueryResults", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestSearchYouTube_TRND09_FreshResultsRefreshGroupWithoutCounting(t *testing.T) {
+	h := newSearchHarness(t)
+	h.yt.On("SearchVideos", "Rain Song", "TH", "10").Return(ytVideos(2), nil).Once()
+	h.repo.On("UpsertSearchVideos", mock.Anything).Return(nil).Once()
+	h.repo.ExpectedCalls = dropExpectations(h.repo.ExpectedCalls, "SearchLocal")
+	h.repo.On("SearchLocal", "TH", "10", "Rain Song", 5).Return(itemsWithIDs("a", "yt1"), nil).Once()
+
+	_, err := h.uc.SearchYouTube("user-1", "Rain Song", "TH", "10")
+	require.NoError(t, err)
+	res, err := h.uc.SearchYouTube("user-2", "rain song", "TH", "10")
+	require.NoError(t, err)
+	require.True(t, res.Cached)
+
+	h.repo.AssertNumberOfCalls(t, "SaveQueryResults", 1)
+	h.repo.AssertCalled(t, "SaveQueryResults", "TH", "rain song", itemsWithIDs("a", "yt1"), fixedNow)
+	assert.Empty(t, queryHits(h))
+}
+
+func TestSearchYouTube_NonMusicDoesNotTouchGroups(t *testing.T) {
+	h := newSearchHarness(t)
+	h.yt.On("SearchVideos", "speedrun", "TH", "20").Return(ytVideos(1), nil).Once()
+	h.repo.On("UpsertSearchVideos", mock.Anything).Return(nil).Once()
+
+	_, err := h.uc.SearchYouTube("user-1", "speedrun", "TH", "20")
+	require.NoError(t, err)
+	h.repo.AssertNotCalled(t, "SaveQueryResults", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestSearch_TRND10_GroupWriteFailureDoesNotFailSearch(t *testing.T) {
+	h := newSearchHarness(t)
+	h.repo.ExpectedCalls = nil
+	h.repo.On("CreateQueryHit", mock.Anything).Return(errors.New("db down"))
+	h.repo.On("SaveQueryResults", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("db down"))
+	h.repo.On("SearchLocal", "TH", "10", "rain song", 30).Return(itemsWithIDs("a"), nil)
+
+	res, err := h.uc.SearchLocal("1.2.3.4", "rain song", "TH", "")
+	require.NoError(t, err)
+	assert.Len(t, res.Items, 1)
+}
+
+func TestGetSearchedQueries_TRND11_LastSevenDaysAtLeastTwoVisitors(t *testing.T) {
+	h := newSearchHarness(t)
+	want := []domain.SearchedQuery{{Query: "rain song", Rank: 1, Searches: 4, Items: itemsWithIDs("a")}}
+	h.repo.On("SearchedQueries", "TH", fixedNow.Add(-7*24*time.Hour), 2, 30).Return(want, nil)
+
+	got, err := h.uc.GetSearchedQueries("th")
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+
+	var ve *domain.ValidationError
+	_, err = h.uc.GetSearchedQueries("FR")
+	assert.ErrorAs(t, err, &ve)
+}
+
+func TestPruneSearchQueryHits_TRND12_DeletesHitsOlderThanSevenDays(t *testing.T) {
+	h := newSearchHarness(t)
+	h.repo.On("DeleteQueryHitsBefore", fixedNow.Add(-7*24*time.Hour)).Return(int64(12), nil)
+
+	n, err := h.uc.PruneSearchQueryHits()
+	require.NoError(t, err)
+	assert.Equal(t, int64(12), n)
 }

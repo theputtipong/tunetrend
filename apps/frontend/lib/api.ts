@@ -3,7 +3,7 @@ import type { TabKey } from "./tabs";
 import type { Song, TrendsResponse } from "@/types/song";
 import type { Category, CategoriesResponse } from "@/types/category";
 import type { DiscoverItem, DiscoverResponse } from "@/types/discover";
-import type { LocalSearchResult, SearchedTrend } from "@/types/search";
+import type { LocalSearchResult, SearchedQuery } from "@/types/search";
 import { forwardedClientHeaders } from "./session";
 
 const API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:8080";
@@ -84,8 +84,10 @@ export async function fetchLocalSearch(
   country: CountryCode,
   category: string,
   clientIp?: string | null,
+  track = true,
 ): Promise<LocalSearchResult> {
   const params = new URLSearchParams({ q, country, category });
+  if (!track) params.set("track", "0");
   const res = await fetch(`${API_BASE_URL}/search?${params.toString()}`, {
     cache: "no-store",
     headers: forwardedClientHeaders(clientIp),
@@ -98,8 +100,8 @@ export async function fetchLocalSearch(
   return { items: body.data?.items ?? [], suggestYouTube: Boolean(body.data?.suggestYouTube) };
 }
 
-export async function fetchSearchedTrends(country: CountryCode): Promise<SearchedTrend[]> {
-  const res = await fetch(`${API_BASE_URL}/trends/searched?country=${country}`, {
+export async function fetchSearchedQueries(country: CountryCode): Promise<SearchedQuery[]> {
+  const res = await fetch(`${API_BASE_URL}/trends/searched-queries?country=${country}`, {
     next: { revalidate: SEARCHED_REVALIDATE_SECONDS },
   });
   const body = await res.json().catch(() => null);

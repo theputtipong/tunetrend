@@ -29,10 +29,12 @@ type stubSearchUsecase struct {
 	hitErr       error
 	hitCounted   bool
 	lastHitIP    string
+	lastLocalIP  string
 }
 
-func (s *stubSearchUsecase) SearchLocal(q, country, category string) (domain.LocalSearchResult, error) {
+func (s *stubSearchUsecase) SearchLocal(ip, q, country, category string) (domain.LocalSearchResult, error) {
 	s.localCalls++
+	s.lastLocalIP = ip
 	if s.localErr != nil {
 		return domain.LocalSearchResult{}, s.localErr
 	}
@@ -59,6 +61,15 @@ func (s *stubSearchUsecase) GetSearchedTrends(country string) ([]domain.Searched
 
 func (s *stubSearchUsecase) RefreshSearchVideoStats() (int, error) { return 0, nil }
 
+func (s *stubSearchUsecase) GetSearchedQueries(country string) ([]domain.SearchedQuery, error) {
+	if country == "FR" {
+		return nil, &domain.ValidationError{Message: "unsupported country"}
+	}
+	return []domain.SearchedQuery{{Query: "rain song", Rank: 1, Searches: 3, Items: []domain.SearchItem{{ID: "a"}}}}, nil
+}
+
+func (s *stubSearchUsecase) PruneSearchQueryHits() (int64, error) { return 0, nil }
+
 func withUser(userID string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if userID != "" {
@@ -78,6 +89,7 @@ func newSearchApp(uc domain.SearchUsecase, userID string, limiter fiber.Handler)
 	app.Get("/search/youtube", withUser(userID), h.SearchYouTube)
 	app.Post("/search/hit", h.RecordHit)
 	app.Get("/trends/searched", h.GetSearchedTrends)
+	app.Get("/trends/searched-queries", h.GetSearchedQueries)
 	return app
 }
 
@@ -112,6 +124,11 @@ func TestSearchHandler_LocalSuccess(t *testing.T) {
 	assert.Equal(t, true, r.body["success"])
 	data := r.body["data"].(map[string]any)
 	assert.Equal(t, true, data["suggestYouTube"])
+	assert.Equal(t, "9.9.9.9", uc.lastLocalIP)
+
+	r = searchCall(t, newSearchApp(uc, "", nil), nethttp.MethodGet, "/search?q=rain&country=TH&track=0", "")
+	assert.Equal(t, 200, r.status)
+	assert.Equal(t, "", uc.lastLocalIP, "track=0 must skip counting by passing no visitor")
 }
 
 func TestSearchHandler_SRCH04_ValidationErrorIs400(t *testing.T) {
@@ -200,6 +217,21 @@ func TestSearchHandler_SearchedTrends(t *testing.T) {
 	assert.Len(t, r.body["data"].([]any), 1)
 }
 
+func TestSearchHandler_TRND11_SearchedQueries(t *testing.T) {
+	app := newSearchApp(&stubSearchUsecase{}, "", nil)
+	r := searchCall(t, app, nethttp.MethodGet, "/trends/searched-queries?country=TH", "")
+	assert.Equal(t, 200, r.status)
+	groups := r.body["data"].([]any)
+	require.Len(t, groups, 1)
+	g := groups[0].(map[string]any)
+	assert.Equal(t, "rain song", g["query"])
+	assert.Equal(t, float64(3), g["searches"])
+	assert.Len(t, g["items"].([]any), 1)
+
+	r = searchCall(t, app, nethttp.MethodGet, "/trends/searched-queries?country=FR", "")
+	assert.Equal(t, 400, r.status)
+}
+
 type stubAuthUsecase struct {
 	domain.AuthUsecase
 	tokens map[string]string
@@ -266,4 +298,10 @@ func TestSearchRoutes_SRCH05_YouTubeRateLimitReturns429WithoutSearching(t *testi
 	assert.Equal(t, 30, uc.youtubeCalls)
 
 	require.Equal(t, 200, authedSearchCall(t, app, "/search?q=rain&country=TH", "").status, "limiters are scoped per route")
+}
+
+func TestSearchRoutes_SearchedQueriesRegisteredAndPublic(t *testing.T) {
+	app := newRoutedSearchApp(t, &stubSearchUsecase{})
+	r := searchCall(t, app, nethttp.MethodGet, "/trends/searched-queries?country=TH", "")
+	assert.Equal(t, 200, r.status)
 }

@@ -26,11 +26,11 @@ func openSearchTestDB(t *testing.T) *gorm.DB {
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	require.NoError(t, err)
-	require.NoError(t, db.AutoMigrate(&domain.Song{}, &domain.SearchVideo{}, &domain.SearchHit{}))
+	require.NoError(t, db.AutoMigrate(&domain.Song{}, &domain.SearchVideo{}, &domain.SearchHit{}, &domain.SearchQuery{}, &domain.SearchQueryHit{}))
 	require.NoError(t, db.Table("gaming_videos").AutoMigrate(&domain.CategoryVideo{}))
-	require.NoError(t, db.Exec("TRUNCATE songs, search_videos, search_hits, gaming_videos").Error)
+	require.NoError(t, db.Exec("TRUNCATE songs, search_videos, search_hits, gaming_videos, search_queries, search_query_hits").Error)
 	t.Cleanup(func() {
-		db.Exec("TRUNCATE songs, search_videos, search_hits, gaming_videos")
+		db.Exec("TRUNCATE songs, search_videos, search_hits, gaming_videos, search_queries, search_query_hits")
 		if sqlDB, err := db.DB(); err == nil {
 			sqlDB.Close()
 		}
@@ -257,4 +257,132 @@ func TestSearchVideoIDsWithHitsSince(t *testing.T) {
 	ids, err := repo.SearchVideoIDsWithHitsSince(now.Add(-7 * 24 * time.Hour))
 	require.NoError(t, err)
 	assert.Equal(t, []string{"y1"}, ids)
+}
+
+func queryHit(t *testing.T, repo domain.SearchRepository, country, q, visitor string, at time.Time) {
+	t.Helper()
+	require.NoError(t, repo.CreateQueryHit(domain.SearchQueryHit{CountryCode: country, QueryNorm: q, VisitorHash: visitor, HitAt: at}))
+}
+
+func TestSearchedQueries_TRND11_GroupsByQueryWithThresholdAndWindow(t *testing.T) {
+	db := openSearchTestDB(t)
+	repo := newSearchRepo(db)
+	now := time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
+	since := now.Add(-7 * 24 * time.Hour)
+
+	require.NoError(t, repo.SaveQueryResults("TH", "rain song", []domain.SearchItem{{ID: "a", Title: "A"}, {ID: "b"}}, now))
+	require.NoError(t, repo.SaveQueryResults("TH", "solo search", []domain.SearchItem{{ID: "c"}}, now))
+	require.NoError(t, repo.SaveQueryResults("TH", "old song", []domain.SearchItem{{ID: "d"}}, now))
+	require.NoError(t, repo.SaveQueryResults("TH", "busy", []domain.SearchItem{{ID: "e"}}, now))
+	require.NoError(t, repo.SaveQueryResults("US", "rain song", []domain.SearchItem{{ID: "f"}}, now))
+
+	queryHit(t, repo, "TH", "rain song", "v1", now.Add(-time.Hour))
+	queryHit(t, repo, "TH", "rain song", "v2", now.Add(-2*time.Hour))
+	queryHit(t, repo, "TH", "solo search", "v1", now.Add(-time.Hour))
+	queryHit(t, repo, "TH", "solo search", "v1", now.Add(-3*time.Hour))
+	queryHit(t, repo, "TH", "solo search", "v1", now.Add(-5*time.Hour))
+	queryHit(t, repo, "TH", "old song", "v1", now.Add(-8*24*time.Hour))
+	queryHit(t, repo, "TH", "old song", "v2", now.Add(-8*24*time.Hour))
+	for i, v := range []string{"v1", "v2", "v3"} {
+		queryHit(t, repo, "TH", "busy", v, now.Add(-time.Duration(i+1)*time.Minute))
+	}
+	queryHit(t, repo, "US", "rain song", "v9", now.Add(-time.Hour))
+	queryHit(t, repo, "US", "rain song", "v8", now.Add(-time.Hour))
+
+	got, err := repo.SearchedQueries("TH", since, 2, 30)
+	require.NoError(t, err)
+	require.Len(t, got, 2, "solo search has one visitor, old song is outside the window")
+	assert.Equal(t, "busy", got[0].Query)
+	assert.Equal(t, 1, got[0].Rank)
+	assert.Equal(t, int64(3), got[0].Searches)
+	assert.Equal(t, "rain song", got[1].Query)
+	assert.Equal(t, 2, got[1].Rank)
+	assert.Equal(t, int64(2), got[1].Searches)
+	require.Len(t, got[1].Items, 2)
+	assert.Equal(t, "A", got[1].Items[0].Title)
+
+	limited, err := repo.SearchedQueries("TH", since, 2, 1)
+	require.NoError(t, err)
+	assert.Len(t, limited, 1)
+}
+
+func TestSaveQueryResults_LatestSearchReplacesGroupResults(t *testing.T) {
+	db := openSearchTestDB(t)
+	repo := newSearchRepo(db)
+	now := time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
+
+	require.NoError(t, repo.SaveQueryResults("TH", "rain", []domain.SearchItem{{ID: "old"}}, now.Add(-time.Hour)))
+	require.NoError(t, repo.SaveQueryResults("TH", "rain", []domain.SearchItem{{ID: "new1"}, {ID: "new2"}}, now))
+	queryHit(t, repo, "TH", "rain", "v1", now)
+	queryHit(t, repo, "TH", "rain", "v2", now)
+
+	got, err := repo.SearchedQueries("TH", now.Add(-24*time.Hour), 2, 30)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	assert.Equal(t, []string{"new1", "new2"}, []string{got[0].Items[0].ID, got[0].Items[1].ID})
+
+	var count int64
+	db.Model(&domain.SearchQuery{}).Count(&count)
+	assert.Equal(t, int64(1), count)
+}
+
+func TestSearchedQueries_GroupWithoutResultsHidden(t *testing.T) {
+	db := openSearchTestDB(t)
+	repo := newSearchRepo(db)
+	now := time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
+
+	require.NoError(t, repo.SaveQueryResults("TH", "empty", []domain.SearchItem{}, now))
+	queryHit(t, repo, "TH", "empty", "v1", now)
+	queryHit(t, repo, "TH", "empty", "v2", now)
+	queryHit(t, repo, "TH", "no snapshot", "v1", now)
+	queryHit(t, repo, "TH", "no snapshot", "v2", now)
+
+	got, err := repo.SearchedQueries("TH", now.Add(-time.Hour), 2, 30)
+	require.NoError(t, err)
+	assert.Empty(t, got)
+}
+
+func TestDeleteQueryHitsBefore_TRND12(t *testing.T) {
+	db := openSearchTestDB(t)
+	repo := newSearchRepo(db)
+	now := time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
+
+	queryHit(t, repo, "TH", "q", "v1", now.Add(-8*24*time.Hour))
+	queryHit(t, repo, "TH", "q", "v2", now.Add(-6*24*time.Hour))
+
+	require.NoError(t, repo.SaveQueryResults("TH", "q", []domain.SearchItem{{ID: "a"}}, now))
+	queryHit(t, repo, "TH", "private old", "v3", now.Add(-9*24*time.Hour))
+	require.NoError(t, repo.SaveQueryResults("TH", "private old", []domain.SearchItem{{ID: "b"}}, now.Add(-9*24*time.Hour)))
+	require.NoError(t, repo.SaveQueryResults("TH", "never counted", []domain.SearchItem{{ID: "c"}}, now))
+
+	n, err := repo.DeleteQueryHitsBefore(now.Add(-7 * 24 * time.Hour))
+	require.NoError(t, err)
+	assert.Equal(t, int64(2), n)
+	var left int64
+	db.Model(&domain.SearchQueryHit{}).Count(&left)
+	assert.Equal(t, int64(1), left)
+
+	var kept []string
+	db.Model(&domain.SearchQuery{}).Order("query_norm").Pluck("query_norm", &kept)
+	assert.Equal(t, []string{"q"}, kept, "groups without hits in the window are deleted with their snapshot")
+}
+
+func TestSearchedQueries_TieBreakByLatestSearchThenQuery(t *testing.T) {
+	db := openSearchTestDB(t)
+	repo := newSearchRepo(db)
+	now := time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
+	for _, q := range []string{"alpha", "bravo", "charlie"} {
+		require.NoError(t, repo.SaveQueryResults("TH", q, []domain.SearchItem{{ID: q}}, now))
+	}
+	queryHit(t, repo, "TH", "alpha", "v1", now.Add(-3*time.Hour))
+	queryHit(t, repo, "TH", "alpha", "v2", now.Add(-3*time.Hour))
+	queryHit(t, repo, "TH", "charlie", "v1", now.Add(-time.Hour))
+	queryHit(t, repo, "TH", "charlie", "v2", now.Add(-3*time.Hour))
+	queryHit(t, repo, "TH", "bravo", "v1", now.Add(-3*time.Hour))
+	queryHit(t, repo, "TH", "bravo", "v2", now.Add(-3*time.Hour))
+
+	got, err := repo.SearchedQueries("TH", now.Add(-24*time.Hour), 2, 30)
+	require.NoError(t, err)
+	require.Len(t, got, 3)
+	assert.Equal(t, []string{"charlie", "alpha", "bravo"}, []string{got[0].Query, got[1].Query, got[2].Query})
 }

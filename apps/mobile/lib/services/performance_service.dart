@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 
 class PerformanceService {
@@ -7,10 +8,10 @@ class PerformanceService {
 
   static final PerformanceService _instance = PerformanceService._();
 
-  final FirebasePerformance _performance = FirebasePerformance.instance;
-
   Future<T> traceFunction<T>(String name, Future<T> Function() action) async {
-    final trace = _performance.newTrace(name);
+    // No Firebase app (e.g. widget tests, failed init) → run untraced.
+    if (Firebase.apps.isEmpty) return action();
+    final trace = FirebasePerformance.instance.newTrace(name);
     await trace.start();
     try {
       final result = await action();

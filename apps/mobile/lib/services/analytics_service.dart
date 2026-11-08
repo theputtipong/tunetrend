@@ -1,5 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/widgets.dart';
 
 class AnalyticsService {
   factory AnalyticsService() => _instance;
@@ -8,11 +9,13 @@ class AnalyticsService {
 
   static final AnalyticsService _instance = AnalyticsService._();
 
-  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
+  // No Firebase app (e.g. widget tests, failed init) → analytics is a no-op.
+  FirebaseAnalytics? get _analytics =>
+      Firebase.apps.isEmpty ? null : FirebaseAnalytics.instance;
 
-  late final FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(
-    analytics: _analytics,
-  );
+  late final NavigatorObserver observer = _analytics == null
+      ? NavigatorObserver()
+      : FirebaseAnalyticsObserver(analytics: _analytics!);
 
   Future<void> logCountryChanged(String countryCode) {
     return _log('country_changed', {'country_code': countryCode});
@@ -87,8 +90,10 @@ class AnalyticsService {
   }
 
   Future<void> _log(String name, Map<String, Object> parameters) async {
+    final analytics = _analytics;
+    if (analytics == null) return;
     try {
-      await _analytics.logEvent(name: name, parameters: parameters);
+      await analytics.logEvent(name: name, parameters: parameters);
     } catch (error, stack) {
       debugPrint('AnalyticsService: failed to log "$name": $error\n$stack');
     }

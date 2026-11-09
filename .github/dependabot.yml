@@ -1,40 +1,73 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns: ["*"]
     commit-message:
-      prefix: "chore(deps)"
+      prefix: chore(deps)
 
-  - package-ecosystem: "npm"
-    directory: "/apps/frontend"
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm:
+        patterns: ["*"]
     commit-message:
-      prefix: "chore(deps)"
+      prefix: chore(deps)
 
-  - package-ecosystem: "gomod"
-    directory: "/apps/backend"
+  - package-ecosystem: npm
+    directory: /apps/frontend
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Exception to one group per ecosystem: react + react-dom (+ types) must bump together or npm ci hits ERESOLVE.
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      # next + eslint-config-next must bump together for the same reason.
+      next:
+        patterns: ["next", "eslint-config-next"]
+      npm:
+        patterns: ["*"]
     commit-message:
-      prefix: "chore(deps)"
+      prefix: chore(deps)
 
-  - package-ecosystem: "pub"
-    directory: "/apps/mobile"
+  - package-ecosystem: gomod
+    directory: /apps/backend
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      gomod:
+        patterns: ["*"]
     commit-message:
-      prefix: "chore(deps)"
+      prefix: chore(deps)
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: pub
+    directory: /apps/mobile
     schedule:
-      interval: "weekly"
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      pub:
+        patterns: ["*"]
     commit-message:
-      prefix: "chore(ci)"
+      prefix: chore(deps)
+
+  - package-ecosystem: gradle
+    directory: /apps/mobile/android
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      gradle:
+        patterns: ["*"]
+    commit-message:
+      prefix: chore(deps)

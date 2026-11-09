@@ -1,0 +1,168 @@
+name: Release Android
+
+on:
+  push:
+    tags: ["android-v*"]
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "Version name (e.g. 1.0.1). Leave empty to use pubspec.yaml"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-android
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: 3.47.2
+  JAVA_VERSION: "17"
+  API_BASE_URL: https://tunetrend-api.onrender.com
+
+jobs:
+  release-android:
+    name: Release Android
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: android-release
+    permissions:
+      contents: write # gh release create on tag push
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      # No cache: a release build must not restore anything a PR run could have written.
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Resolve version
+        id: version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION_NAME: ${{ inputs.version_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          if [ "$REF_TYPE" = "tag" ]; then
+            VERSION_NAME="${REF_NAME#android-v}"
+          else
+            VERSION_NAME="${INPUT_VERSION_NAME:-$(grep -E '^version:' pubspec.yaml | sed -E 's/version: *([^+]+).*/\1/')}"
+          fi
+          if ! printf '%s' "$VERSION_NAME" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$'; then
+            echo "::error::Invalid version name: $VERSION_NAME"; exit 1
+          fi
+          echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$RUN_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "### Android release $VERSION_NAME ($RUN_NUMBER)" >> "$GITHUB_STEP_SUMMARY"
+
+      # A release must be signed: without key.properties Gradle silently falls back to debug signing.
+      # key.properties stays at android/key.properties (gitignored), not $RUNNER_TEMP, because
+      # android/app/build.gradle.kts reads rootProject.file("key.properties").
+      - name: Decode signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] \
+            || [ -z "$ANDROID_KEY_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ]; then
+            echo "::error::Android signing secrets missing"; exit 1
+          fi
+          umask 077
+          KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+          cat > android/key.properties <<PROPS
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=$KEYSTORE_PATH
+          PROPS
+
+      # Optional: the build still succeeds without it, Google sign-in is just disabled.
+      - name: Check config
+        id: config
+        env:
+          GOOGLE_SERVER_CLIENT_ID: ${{ vars.GOOGLE_SERVER_CLIENT_ID }}
+        run: |
+          if [ -n "$GOOGLE_SERVER_CLIENT_ID" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::vars.GOOGLE_SERVER_CLIENT_ID not set; Google sign-in will be disabled in this build"
+          fi
+
+      # AAB for Play, APK for manual/sideload testing.
+      - name: Build
+        env:
+          GOOGLE_SERVER_CLIENT_ID: ${{ vars.GOOGLE_SERVER_CLIENT_ID }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+          BUILD_NUMBER: ${{ steps.version.outputs.code }}
+        run: |
+          for target in appbundle apk; do
+            flutter build "$target" --release \
+              --build-name="$VERSION_NAME" \
+              --build-number="$BUILD_NUMBER" \
+              --obfuscate \
+              --split-debug-info=build/symbols \
+              --dart-define=API_BASE_URL="$API_BASE_URL" \
+              --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+          done
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks" android/key.properties
+
+      # For flutter symbolize.
+      - name: Upload symbols
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tunetrend-android-symbols-${{ github.ref_type == 'tag' && steps.version.outputs.name || github.run_number }}
+          path: apps/mobile/build/symbols
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tunetrend-android-aab-${{ github.ref_type == 'tag' && steps.version.outputs.name || github.run_number }}
+          path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tunetrend-android-apk-${{ github.ref_type == 'tag' && steps.version.outputs.name || github.run_number }}
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: GitHub Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+        run: |
+          cp build/app/outputs/bundle/release/app-release.aab "tunetrend-${VERSION_NAME}.aab"
+          cp build/app/outputs/flutter-apk/app-release.apk "tunetrend-${VERSION_NAME}.apk"
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Android $VERSION_NAME" \
+            --generate-notes \
+            "tunetrend-${VERSION_NAME}.aab" "tunetrend-${VERSION_NAME}.apk"

@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tunetrend_mobile/screens/tune_trend_app.dart';
 
 void main() {
-  testWidgets('renders the TuneTrend header and tabs', (WidgetTester tester) async {
+  testWidgets('renders the TuneTrend header and tabs', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const TuneTrendApp());
     await tester.pump();
 
@@ -11,5 +13,8 @@ void main() {
     expect(find.text('Trending'), findsOneWidget);
     expect(find.text('New Releases'), findsOneWidget);
     expect(find.text('Music Videos'), findsOneWidget);
+
+    // Let the API client's 10s connect timeout fire so no timer is left pending.
+    await tester.pump(const Duration(seconds: 11));
   });
 }
